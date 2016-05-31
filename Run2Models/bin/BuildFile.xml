@@ -1,0 +1,2 @@
+<bin file="create_hh_datacards.cpp" name="create_hh_datacards"></bin>
+<use name="hh-limits/Run2Models"/>
