@@ -21,13 +21,14 @@ git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
 cd CombineHarvester
 git checkout CombineHarvester-v16.2.1
 cd ..
-git clone -o upstream git@github.com:cms-hh/Combination.git hh-limits
+git clone -o upstream git@github.com:cms-hh/HHStatAnalysis.git HHStatAnalysis
+git clone -o upstream git@github.com:cms-hh/Resources.git HHStatAnalysis/Resources
 scram b -j4
 ```
 
 ## How to run
 
-For details about how to run tools provided by CombineHarvester, please, see its documentation: http://cms-analysis.github.io/CombineHarvester/.
+For details about how to run tools provided by CombineHarvester (e.g. combineTool.py, plotLimits.py), please, see its documentation: http://cms-analysis.github.io/CombineHarvester/.
 
 
 ### How to run limits for a single channel
@@ -61,4 +62,4 @@ plotLimits.py JSON_FILE --auto-style
 
 ## How to add new statistical model
 
-To add new stat. model one should implement HH_Model interface within new class inside hh-limits/Run2Models package and add producer for this class into the producer map in GetProducerFunctions function implemented inside HH_ModelFactory.cc.
+To add new stat. model one should implement hh_analysis::stat_models::StatModel interface within new class inside HHStatAnalysis/StatModels package and add producer for this class into the producer map in GetProducerFunctions function implemented inside StatModelFactory.cc.
