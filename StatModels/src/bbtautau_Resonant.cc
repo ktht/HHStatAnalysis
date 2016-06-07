@@ -1,30 +1,33 @@
-#include <iostream>
-#include "hh-limits/Run2Models/interface/bbtautau_Resonant.h"
-#include "hh-limits/Run2Models/interface/exception.h"
-#include "CombineHarvester/CombineTools/interface/Systematics.h"
-#include "hh-limits/Run2Models/interface/Tools.h"
+/*! Stat model for X->hh->bbtautau.
+This file is part of https://github.com/cms-hh/StatAnalysis. */
 
-namespace hh_limits {
-namespace unc_models {
+#include <iostream>
+#include "CombineHarvester/CombineTools/interface/Systematics.h"
+#include "HHStatAnalysis/StatModels/interface/bbtautau_Resonant.h"
+#include "HHStatAnalysis/Core/interface/exception.h"
+#include "HHStatAnalysis/Core/interface/Tools.h"
+
+namespace hh_analysis {
+namespace stat_models {
 
 const std::string bbtautau_Resonant::file_name_suffix = "m_ttbb_MassWindow";
-const HH_Model::v_double bbtautau_Resonant::masses = {
+const StatModel::v_double bbtautau_Resonant::masses = {
     250, 260, 270, 280, 300, 320, 340, 350, 400, 450, 500, 550, 600, 650, 700, 800, 900
 };
 
-const HH_Model::v_str bbtautau_Resonant::masses_str = ToStrVector(bbtautau_Resonant::masses);
-const HH_Model::v_str bbtautau_Resonant::ana_name = { "HHbbtt" };
-const HH_Model::v_str bbtautau_Resonant::eras = { "13TeV" };
-const HH_Model::v_str bbtautau_Resonant::channels = { "muTau" };
+const StatModel::v_str bbtautau_Resonant::masses_str = ToStrVector(bbtautau_Resonant::masses);
+const StatModel::v_str bbtautau_Resonant::ana_name = { "HHbbtt" };
+const StatModel::v_str bbtautau_Resonant::eras = { "13TeV" };
+const StatModel::v_str bbtautau_Resonant::channels = { "muTau" };
 const ch::Categories bbtautau_Resonant::categories = {
     { 0, "2jet0tag" }, { 1, "2jet1tag" }, { 2, "2jet2tag" }
 };
-const HH_Model::v_str bbtautau_Resonant::signal_processes = { "ggRadionTohhTo2Tau2B" };
-const HH_Model::v_str bbtautau_Resonant::bkg_mc_processes = { "TT", "ZTT", "VV", "W" };
-const HH_Model::v_str bbtautau_Resonant::bkg_data_driven_processes = { "QCD" };
-const HH_Model::v_str bbtautau_Resonant::bkg_all_processes
+const StatModel::v_str bbtautau_Resonant::signal_processes = { "ggRadionTohhTo2Tau2B" };
+const StatModel::v_str bbtautau_Resonant::bkg_mc_processes = { "TT", "ZTT", "VV", "W" };
+const StatModel::v_str bbtautau_Resonant::bkg_data_driven_processes = { "QCD" };
+const StatModel::v_str bbtautau_Resonant::bkg_all_processes
                                         = ch::JoinStr({ bkg_mc_processes, bkg_data_driven_processes });
-const HH_Model::v_str bbtautau_Resonant::all_mc_processes = ch::JoinStr({ signal_processes, bkg_mc_processes });
+const StatModel::v_str bbtautau_Resonant::all_mc_processes = ch::JoinStr({ signal_processes, bkg_mc_processes });
 
 std::pair<std::string, std::string> bbtautau_Resonant::ShapeNameRule(bool use_mass)
 {
@@ -126,5 +129,5 @@ void bbtautau_Resonant::AddSystematics(ch::CombineHarvester& cb)
     h.cp().process(mc_samples).AddSyst(cb, "CMS_scale_t_mutau_13TeV", "shape", SystMap<>::init(1));
 }
 
-} // namespace models
-} // namespace limits
+} // namespace stat_models
+} // namespace hh_analysis

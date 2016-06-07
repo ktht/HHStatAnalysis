@@ -1,11 +1,14 @@
+/*! Stat model for X->hh->bbtautau.
+This file is part of https://github.com/cms-hh/StatAnalysis. */
+
 #pragma once
 
-#include "hh-limits/Run2Models/interface/HH_Model.h"
+#include "StatModel.h"
 
-namespace hh_limits {
-namespace unc_models {
+namespace hh_analysis {
+namespace stat_models {
 
-class bbtautau_Resonant : public HH_Model {
+class bbtautau_Resonant : public StatModel {
 public:
     static const std::string file_name_suffix;
     static const v_double masses;
@@ -33,5 +36,5 @@ private:
     static std::string FullFileName(const std::string& path, const std::string& channel);
 };
 
-} // namespace models
-} // namespace limits
+} // namespace stat_models
+} // namespace hh_analysis

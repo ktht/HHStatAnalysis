@@ -1,21 +1,25 @@
+/*! Definition of the base class for HH stat models.
+This file is part of https://github.com/cms-hh/StatAnalysis. */
+
 #pragma once
 
-#include <memory>
 #include "CombineHarvester/CombineTools/interface/CombineHarvester.h"
 
-namespace hh_limits {
+namespace hh_analysis {
+namespace stat_models {
 
-class HH_Model {
+class StatModel {
 public:
     using v_str = std::vector<std::string>;
     using v_double = std::vector<double>;
 
     static const v_str wildcard;
 
-    virtual ~HH_Model() {}
+    virtual ~StatModel() {}
     virtual void CreateDatacards(const std::string& shapes_path, const std::string& output_path) = 0;
 };
 
-using HH_ModelPtr = std::shared_ptr<HH_Model>;
+using StatModelPtr = std::shared_ptr<StatModel>;
 
-} // namespace hh_limits
+} // namespace stat_models
+} // namespace hh_analysis
