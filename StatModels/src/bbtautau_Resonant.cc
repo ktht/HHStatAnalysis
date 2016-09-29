@@ -12,7 +12,7 @@ namespace stat_models {
 
 const std::string bbtautau_Resonant::file_name_suffix = "m_ttbb_MassWindow";
 const StatModel::v_double bbtautau_Resonant::masses = {
-    250, 260, 270, 280, 300, 320, 340, 350, 400, 450, 500, 550, 600, 650, 700, 800, 900
+    250, 260, 270, 280, 320, 340, 450, 500, 550, 600, 650, 700,750, 800, 900
 };
 
 const StatModel::v_str bbtautau_Resonant::masses_str = ToStrVector(bbtautau_Resonant::masses);
@@ -23,7 +23,7 @@ const ch::Categories bbtautau_Resonant::categories = {
     { 0, "2jet0tag" }, { 1, "2jet1tag" }, { 2, "2jet2tag" }
 };
 const StatModel::v_str bbtautau_Resonant::signal_processes = { "ggRadionTohhTo2Tau2B" };
-const StatModel::v_str bbtautau_Resonant::bkg_mc_processes = { "TT", "ZTT", "VV", "W" };
+const StatModel::v_str bbtautau_Resonant::bkg_mc_processes = { "TT", "ZTT", /*"VV",*/ "W" };
 const StatModel::v_str bbtautau_Resonant::bkg_data_driven_processes = { "QCD" };
 const StatModel::v_str bbtautau_Resonant::bkg_all_processes
                                         = ch::JoinStr({ bkg_mc_processes, bkg_data_driven_processes });
@@ -119,14 +119,18 @@ void bbtautau_Resonant::AddSystematics(ch::CombineHarvester& cb)
     using ch::syst::SystMap;
     ch::CombineHarvester h = cb.cp();
     const auto& sig = ch::Set2Vec(cb.cp().signals().process_set());
-    const std::vector<std::string> bkg_mc = {"TT", "ZTT", "VV", "W"};
-    const std::vector<std::string> mc_samples = ch::JoinStr({ sig, {"TT", "ZTT", "VV", "W"}});
+    const std::vector<std::string> bkg_mc = {"TT", "ZTT", /*"VV", */"W"};
+    const std::vector<std::string> mc_samples = ch::JoinStr({ sig, {"TT", "ZTT", /*"VV", */"W"}});
 
     h.cp().process(mc_samples).AddSyst(cb, "lumi_13TeV", "lnN", SystMap<>::init(1.027));
     h.cp().process(sig).AddSyst(cb, "scale_j_13TeV", "lnN", SystMap<>::init(1.02));
     h.cp().process(bkg_mc).AddSyst(cb, "scale_j_13TeV", "lnN", SystMap<>::init(1.04));
     h.cp().process({"TT"}).AddSyst(cb, "TT_xs_13TeV", "lnN", SystMap<>::init(1.05));
-    h.cp().process(mc_samples).AddSyst(cb, "CMS_scale_t_mutau_13TeV", "shape", SystMap<>::init(1));
+    h.cp().process(mc_samples).AddSyst(cb, "scale_b", "lnN", SystMap<>::init(1.02));
+    h.cp().process(mc_samples).AddSyst(cb, "eff_btag", "lnN", SystMap<>::init(1.03));
+    h.cp().process(mc_samples).AddSyst(cb, "eff_t", "lnN", SystMap<>::init(1.06));
+    h.cp().process(mc_samples).AddSyst(cb, "eff_m", "lnN", SystMap<>::init(1.018));
+    h.cp().process({"QCD"}).AddSyst(cb, "qcd_norm", "lnN", SystMap<>::init(1.06));
 }
 
 } // namespace stat_models
