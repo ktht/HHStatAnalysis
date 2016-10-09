@@ -10,7 +10,7 @@ This file is part of https://github.com/cms-hh/StatAnalysis. */
 namespace hh_analysis {
 namespace stat_models {
 
-const std::string bbtautau_Resonant::file_name_suffix = "m_ttbb_MassWindow";
+const std::string bbtautau_Resonant::file_name_suffix = "m_ttbb_kinfit_KinFitConvergedWithMassWindow";
 const StatModel::v_double bbtautau_Resonant::masses = {
     250, 260, 270, 280, 320, 340, 450, 500, 550, 600, 650, 700,750, 800, 900
 };
