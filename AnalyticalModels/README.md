@@ -1,19 +1,13 @@
 In this repo we have the tools for constructing shapes in the kt X kl plane analitically (this framework is extensible to c2, cg, c2g and more when necessary).
-
-cmsrel CMSSW_7_4_7
-cd CMSSW_7_4_7/src
-cmsenv
-tar xzvf HHStatAnalysis.tar.gz
-scram b
-cd HHStatAnalysis/AnalyticalModels/test
-python nonResonant_bbbb.py --kl 1 --kt 1
-
-
 The input elements are described inside the folder "data"
 
 ===========================================================================================
 
 In the file "test/nonResonant_test_v(0/JHEP).py" we have a template how to use the above file to calculate event-by-event weights. 
+
+      cd HHStatAnalysis/AnalyticalModels/test
+      python nonResonant_test_v(0/JHEP).py --kl 1 --kt 1
+
 In suma, To calculate the event weight one need the following three lines
 
       mhhcost= [tree.Genmhh(),tree.GenHHCost()] # to store [mhh , cost] of that event
