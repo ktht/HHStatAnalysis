@@ -5,14 +5,18 @@ The input elements are described inside the folder "data"
 
 In the file "test/nonResonant_test_v(0/JHEP).py" we have a template how to use the above file to calculate event-by-event weights. 
 
+'''
       cd HHStatAnalysis/AnalyticalModels/test
-      python nonResonant_test_v(0/JHEP).py --kl 1 --kt 1
+      python nonResonant_test_v0.py --kl 1 --kt 1
+'''
 
 In suma, To calculate the event weight one need the following three lines
 
+'''
       mhhcost= [tree.Genmhh(),tree.GenHHCost()] # to store [mhh , cost] of that event
       effSum = sumHAnalyticalBin.GetBinContent(bmhh,bcost)  # quantity of simulated events in that bin (without cuts)
       weight = model.getScaleFactor(mhhcost,kl, kt,v1,model.effSM,effSum,model.MHH,model.COSTS,model.A1,model.A3,model.A7) 
+'''
 
 The sum of weights without cuts is automatically equal to 1. (with ~ 5% precision), so the sum of weights after cuts is already the signal efficiency. 
 
@@ -20,7 +24,7 @@ The sum of weights without cuts is automatically equal to 1. (with ~ 5% precisio
 
 To test this template the events are in a public space AFS
 
-  ==> The events for the 12 benchmarks defined in 1507.02245v4 (JHEP version) each one with 100k event are in txt format (a reader is implemented in the python class)
+  ==> The events for the 12 benchmarks defined in https://arxiv.org/pdf/1507.02245v4.pdf (JHEP version) each one with 100k event are in txt format (a reader is implemented in the python class)
       ==> We sum the benchmarks from 1-12 
 
   ==> The events for V0 (the same of the fullsim version of Moriond 2016) are in root format. Those are common to all CMS final states
