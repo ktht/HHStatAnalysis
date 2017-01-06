@@ -1,22 +1,26 @@
 In this repo we have the tools for constructing shapes in the kt X kl plane analitically (this framework is extensible to c2, cg, c2g and more when necessary).
-The input elements are described inside the folder "data"
 
+The input elements are described inside the folder "data" and at https://github.com/cms-hh/Support/tree/master/NonResonant
+
+(you will need to dowlaod this one in the same folders of HHStatAnalysis)
 ===========================================================================================
 
 In the file "test/nonResonant_test_v(0/JHEP).py" we have a template how to use the above file to calculate event-by-event weights. 
 
-'''
+`
       cd HHStatAnalysis/AnalyticalModels/test
       python nonResonant_test_v0.py --kl 1 --kt 1
-'''
+`
 
 In suma, To calculate the event weight one need the following three lines
 
-'''
+`
       mhhcost= [tree.Genmhh(),tree.GenHHCost()] # to store [mhh , cost] of that event
+
       effSum = sumHAnalyticalBin.GetBinContent(bmhh,bcost)  # quantity of simulated events in that bin (without cuts)
-      weight = model.getScaleFactor(mhhcost,kl, kt,v1,model.effSM,effSum,model.MHH,model.COSTS,model.A1,model.A3,model.A7) 
-'''
+
+      weight = model.getScaleFactor(mhhcost,kl, kt,model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7,effSum) 
+`
 
 The sum of weights without cuts is automatically equal to 1. (with ~ 5% precision), so the sum of weights after cuts is already the signal efficiency. 
 
