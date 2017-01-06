@@ -36,7 +36,7 @@ def main():
   dumb = model.ReadCoefficients("../data/coefficientsByBin_klkt.txt",model.effSM,model.effSum,model.MHH,model.COSTS,model.A1,model.A3,model.A7) 
   # We sum SM + box + the benchmarks from 2-13 
   # read the 2D histo referent to the sum of events
-  fileHH=ROOT.TFile("../data/Distros_5p_SM3M_sumBenchJHEP_13TeV.root")
+  fileHH=ROOT.TFile("../../Support/NonResonant/Distros_5p_SM3M_sumBenchJHEP_13TeV.root")
   sumJHEPAnalyticalBin = fileHH.Get("H1bin2")
   SMAnalyticalBin = fileHH.Get("H0bin2")
   xaxis = sumJHEPAnalyticalBin.GetXaxis()

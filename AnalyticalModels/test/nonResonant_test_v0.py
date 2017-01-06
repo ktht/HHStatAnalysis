@@ -41,7 +41,7 @@ def main():
   # now loop over events, calculate weights using the coeffitients and  plot histograms
   # We sum SM + box + the benchmarks from 2-13 
   # read the 2D histo referent to the sum of events
-  fileHH=ROOT.TFile("../data/Hist2DSum_V0_SM_box.root")
+  fileHH=ROOT.TFile("../../Support/NonResonant/data/Hist2DSum_V0_SM_box.root")
   sumHAnalyticalBin = fileHH.Get("SumV0_AnalyticalBin")
   sumHBenchBin = fileHH.Get("SumV0_AnalyticalBin")
   # read the events
