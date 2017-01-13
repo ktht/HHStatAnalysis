@@ -113,19 +113,42 @@ struct ArgumentBase {
 
 
 namespace detail {
-template<typename T>
-struct ArgumentMultiplicity { static int Get() { return 1; } };
 
 template<typename T>
-struct ArgumentMultiplicity<std::vector<T>> { static int Get() { return -1; } };
+struct ValueWrapper {
+    using Value = T;
+    Value val{};
+    ValueWrapper() {}
+    ValueWrapper(const Value& v) : val(v) {}
+    const Value& operator*() const { return val; }
+};
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const ValueWrapper<T>& w)
+{
+    os << w.val;
+    return os;
+}
+
+template<typename T>
+inline std::istream& operator>>(std::istream& is, ValueWrapper<T>& w)
+{
+    try {
+        is >> w.val;
+
+    } catch(std::exception& e) {
+        is.setstate(std::istream::failbit);
+    }
+    return is;
+}
 
 } // namespace detail
+
 
 template<typename T>
 struct Argument : public ArgumentBase {
     using Value = T;
-
-    Value val;
+    using ValueWrapper = detail::ValueWrapper<Value>;
 
     Argument(const std::string& _name, const std::string& _description)
         : ArgumentBase(_name, _description, true) {}
@@ -133,18 +156,62 @@ struct Argument : public ArgumentBase {
     Argument(const std::string& _name, const std::string& _description, const Value& default_value)
         : ArgumentBase(_name, _description, false), val(default_value) {}
 
-    const Value& operator()() const { return val; }
+    const Value& operator()() const { return *val; }
 
     virtual void Apply(options_description& options_desc, positional_options_description& pos_desc) override
     {
-        auto opt_value = value<Value>(&val);
+        auto opt_value = value<ValueWrapper>(&val);
         if(required)
             opt_value->required();
         else
             opt_value->default_value(val);
         options_desc.add_options()(name.c_str(), opt_value, description.c_str());
-        pos_desc.add(name.c_str(), detail::ArgumentMultiplicity<Value>::Get());
+        pos_desc.add(name.c_str(), 1);
     }
+
+private:
+    ValueWrapper val;
+};
+
+template<typename T>
+struct Argument<std::vector<T>> : public ArgumentBase {
+    using Value = std::vector<T>;
+    using ValueWrapper = detail::ValueWrapper<T>;
+
+    Argument(const std::string& _name, const std::string& _description)
+        : ArgumentBase(_name, _description, true) {}
+
+    Argument(const std::string& _name, const std::string& _description, const Value& default_value)
+        : ArgumentBase(_name, _description, false), wrapper(default_value.begin(), default_value.end()) {}
+
+    const Value& operator()() const
+    {
+        if(val.size() != wrapper.size()) {
+            val.clear();
+            for(const auto& w : wrapper)
+                val.push_back(w.val);
+        }
+        return val;
+    }
+
+    virtual void Apply(options_description& options_desc, positional_options_description& pos_desc) override
+    {
+        auto opt_value = value<std::vector<ValueWrapper>>(&wrapper);
+        if(required)
+            opt_value->required();
+        options_desc.add_options()(name.c_str(), opt_value, description.c_str());
+        pos_desc.add(name.c_str(), -1);
+    }
+
+private:
+    std::vector<ValueWrapper> wrapper;
+    Value val;
+};
+
+struct ArgumentsBase {
+    template<typename T> using Arg = Argument<T>;
+    using StrArg = Arg<std::string>;
+    virtual ~ArgumentsBase() {}
 };
 
 } // namespace run

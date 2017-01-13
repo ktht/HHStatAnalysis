@@ -1,12 +1,12 @@
-/*! Definition of the base exception class for the hh_analysis namespace.
-This file is part of https://github.com/cms-hh/StatAnalysis. */
+/*! Definition of the base exception class for the analysis namespace.
+This file is part of https://github.com/hh-italian-group/AnalysisTools. */
 
 #pragma once
 
 #include <boost/format.hpp>
 #include <sstream>
 
-namespace hh_analysis {
+namespace analysis {
 
 class exception : public std::exception {
 public:
@@ -27,4 +27,4 @@ private:
     boost::format f_msg;
 };
 
-} // hh_analysis
+} // analysis

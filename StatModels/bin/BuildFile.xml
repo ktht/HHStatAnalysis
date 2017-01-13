@@ -1,2 +1,3 @@
 <bin file="create_hh_datacards.cpp" name="create_hh_datacards"></bin>
+<bin file="simple_hh_interpret.cpp" name="simple_hh_interpret"></bin>
 <use name="HHStatAnalysis/StatModels"/>
