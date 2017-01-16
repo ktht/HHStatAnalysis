@@ -1,2 +1,5 @@
 <export><lib name="1"/></export>
+<use name="python"/>
+<use name="boost_python"/>
 <use name="CombineHarvester/CombineTools"/>
+<use name="CombineHarvester/CombinePdfs"/>

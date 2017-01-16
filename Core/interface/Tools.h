@@ -1,31 +1,78 @@
-/*! Common HH analysis tools.
-This file is part of https://github.com/cms-hh/StatAnalysis. */
+/*! Common tools and definitions suitable for general purposes.
+This file is part of https://github.com/hh-italian-group/AnalysisTools. */
 
 #pragma once
 
-#include <algorithm>
 #include <vector>
+#include <set>
+#include <algorithm>
 #include <initializer_list>
-#include <TFile.h>
-#include "exception.h"
+#include <boost/crc.hpp>
 
-namespace hh_analysis {
+namespace analysis {
 
 template<typename T>
-std::vector<std::string> ToStrVector(const std::vector<T>& v)
+constexpr T sqr(const T& x) { return x * x; }
+
+namespace tools {
+
+template<typename Type>
+std::vector<Type> join_vectors(const std::vector< const std::vector<Type>* >& inputVectors)
 {
-    std::vector<std::string> result;
-    std::transform(v.begin(), v.end(), std::back_inserter(result),
-                   [](const T& x) { std::ostringstream ss; ss << x; return ss.str(); });
+    size_t totalSize = 0;
+    for(auto inputVector : inputVectors) {
+        if(!inputVector)
+            throw std::runtime_error("input vector is nullptr");
+        totalSize += inputVector->size();
+    }
+
+    std::vector<Type> result;
+    result.reserve(totalSize);
+    for(auto inputVector : inputVectors)
+        result.insert(result.end(), inputVector->begin(), inputVector->end());
+
     return result;
 }
 
-inline std::shared_ptr<TFile> CreateRootFile(const std::string& file_name)
+template<typename Type>
+std::set<Type> union_sets(std::initializer_list<std::set<Type>> sets)
 {
-    std::shared_ptr<TFile> file(TFile::Open(file_name.c_str(), "RECREATE"));
-    if(file->IsZombie())
-        throw exception("File '%1%' not created.") % file_name;
-    return file;
+    std::set<Type> result;
+    for(const auto& set : sets)
+        result.insert(set.begin(), set.end());
+    return result;
+}
+
+template<typename Container, typename T>
+size_t find_index(const Container& container, const T& value)
+{
+    const auto iter = std::find(container.begin(), container.end(), value);
+    return std::distance(container.begin(), iter);
+}
+
+template<typename Map, typename Set = std::set<typename Map::key_type>>
+Set collect_map_keys(const Map& map)
+{
+    Set result;
+    std::transform(map.begin(), map.end(), std::inserter(result, result.end()),
+                   [](const typename Map::value_type& pair) { return pair.first; } );
+    return result;
+}
+
+template<typename Map, typename Set = std::set<typename Map::mapped_type>>
+Set collect_map_values(const Map& map)
+{
+    Set result;
+    std::transform(map.begin(), map.end(), std::inserter(result, result.end()),
+                   [](const typename Map::value_type& pair) { return pair.second; } );
+    return result;
+}
+
+inline uint32_t hash(const std::string& str)
+{
+    boost::crc_32_type crc;
+    crc.process_bytes(str.data(), str.size());
+    return crc.checksum();
 }
 
 inline std::string FullPath(std::initializer_list<std::string> paths)
@@ -41,4 +88,5 @@ inline std::string FullPath(std::initializer_list<std::string> paths)
     return full_path.str();
 }
 
-} // namespace hh_analysis
+} // namespace tools
+} // namespace analysis

@@ -1,5 +1,5 @@
 /*! Implementation of the HH StatModel factory.
-This file is part of https://github.com/cms-hh/StatAnalysis. */
+This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 
 #include <unordered_map>
 
@@ -12,13 +12,13 @@ namespace stat_models {
 
 namespace {
 
-using ProducerFn = StatModelPtr (*)();
+using ProducerFn = StatModelPtr (*)(const StatModelDescriptor& model_desc);
 using ProducerFnMap = std::unordered_map<std::string, ProducerFn>;
 
 template<typename Model>
-StatModelPtr DefaultProducer()
+StatModelPtr DefaultProducer(const StatModelDescriptor& model_desc)
 {
-    return StatModelPtr(new Model());
+    return StatModelPtr(new Model(model_desc));
 }
 
 const ProducerFnMap& GetProducerFunctions()
@@ -55,15 +55,15 @@ void StatModelFactory::ReportAvailableModelNames(std::ostream& os)
     os << ".";
 }
 
-StatModelPtr StatModelFactory::Make(const std::string& model_name)
+StatModelPtr StatModelFactory::Make(const StatModelDescriptor& model_desc)
 {
-    if(!GetProducerFunctions().count(model_name)) {
+    if(!GetProducerFunctions().count(model_desc.stat_model)) {
         std::ostringstream ss;
-        ss << "Unknown model name '" << model_name << "'.\n";
+        ss << "Unknown model name '" << model_desc.stat_model << "'.\n";
         ReportAvailableModelNames(ss);
         throw exception(ss.str());
     }
-    return GetProducerFunctions().at(model_name)();
+    return GetProducerFunctions().at(model_desc.stat_model)(model_desc);
 }
 
 } // namespace stat_models
