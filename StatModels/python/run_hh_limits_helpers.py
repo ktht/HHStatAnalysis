@@ -19,6 +19,7 @@ def check_result(result, message):
         run_failed(message)
 
 def sh_call(cmd, error_message):
+    print '>> ', cmd
     result = subprocess.call([cmd], shell=True)
     check_result(result, error_message)
 
