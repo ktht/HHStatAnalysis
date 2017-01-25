@@ -10,6 +10,7 @@ This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 #include "HHStatAnalysis/Core/interface/Tools.h"
 #include "HHStatAnalysis/Core/interface/TextIO.h"
 #include "HHStatAnalysis/Core/interface/RootExt.h"
+#include "HHStatAnalysis/StatModels/interface/CommonUncertainties.h"
 
 namespace hh_analysis {
 namespace stat_models {
@@ -77,7 +78,7 @@ void bbtautau_Resonant::CreateDatacards(const std::string& shapes_file, const st
     if(desc.model_signal_process.size())
         RenameProcess(harvester, desc.signal_process, desc.model_signal_process);
 
-    FixNegativeBins(harvester);
+    FixNegativeBins(harvester);    
     harvester.cp().backgrounds().MergeBinErrors(bbb_unc_threshold, bin_merge_threashold);
     harvester.cp().backgrounds().AddBinByBin(bbb_unc_threshold, true, &harvester);
     ch::SetStandardBinNames(harvester);
@@ -109,17 +110,42 @@ void bbtautau_Resonant::CreateDatacards(const std::string& shapes_file, const st
 void bbtautau_Resonant::AddSystematics(ch::CombineHarvester& cb)
 {
     using ch::syst::SystMap;
-    ch::CombineHarvester h = cb.cp();
+    using CU = CommonUncertainties;
 
-    h.cp().process(all_mc_processes).AddSyst(cb, "lumi_13TeV", "lnN", SystMap<>::init(1.027));
-    h.cp().process(signal_processes).AddSyst(cb, "scale_j_13TeV", "lnN", SystMap<>::init(1.02));
-    h.cp().process(bkg_mc_processes).AddSyst(cb, "scale_j_13TeV", "lnN", SystMap<>::init(1.04));
-    h.cp().process({"TT"}).AddSyst(cb, "TT_xs_13TeV", "lnN", SystMap<>::init(1.05));
-    h.cp().process(all_mc_processes).AddSyst(cb, "scale_b", "lnN", SystMap<>::init(1.02));
-    h.cp().process(all_mc_processes).AddSyst(cb, "eff_btag", "lnN", SystMap<>::init(1.03));
-    h.cp().process(all_mc_processes).AddSyst(cb, "eff_t", "lnN", SystMap<>::init(1.06));
-    h.cp().process(all_mc_processes).AddSyst(cb, "eff_m", "lnN", SystMap<>::init(1.018));
-    h.cp().process({"QCD"}).AddSyst(cb, "qcd_norm", "lnN", SystMap<>::init(1.06));
+    CU::lumi.ApplyGlobal(cb, signal_processes, { "TT", "tW", "VV", "W" });
+    CU::cr_DiBoson.ApplyGlobal(cb, { "VV" });
+    CU::cr_TTbar.ApplyGlobal(cb, { "TT" });
+
+    CU::scale_j.Apply(cb, 1.02, signal_processes);
+    CU::scale_j.Apply(cb, 1.04, { "TT", "tW", "VV", "W" });
+    CU::scale_b.Apply(cb, 1.02, signal_processes, { "TT", "tW", "VV", "W" });
+
+    CU::eff_btag.Apply(cb, 1.02, signal_processes, { "DY_2b" });
+    CU::eff_btag.Apply(cb, 1.03, { "TT", "DY_1b", "VV", "W" });
+    CU::eff_btag.Apply(cb, 1.04, { "DY_0b", "tW" });
+
+    CU::eff_e.Channel("eTau").Apply(cb, 1.03, all_mc_processes);
+    CU::eff_mu.Channel("muTau").Apply(cb, 1.02, all_mc_processes);
+    CU::eff_tau.Channels({"eTau", "muTau"}).Apply(cb, 1.06, all_mc_processes);
+    CU::eff_tau.Channel("tauTau").Apply(cb, 1.08, all_mc_processes);
+    CU::scale_tau.Apply(cb, all_mc_processes);
+
+    CU::topPt.Apply(cb, { "TT" });
+
+    const Uncertainty DY0b_sf{CorrelationRange::Analysis, UncDistributionType::lnN, "DY0b_sf"};
+    const Uncertainty DY1b_sf{CorrelationRange::Analysis, UncDistributionType::lnN, "DY1b_sf"};
+    const Uncertainty DY2b_sf{CorrelationRange::Analysis, UncDistributionType::lnN, "DY2b_sf"};
+    DY0b_sf.Apply(cb, 1.01, { "DY_0b", "DY_1b", "DY_2b" });
+    DY1b_sf.Apply(cb, 0.98, { "DY_0b" });
+    DY1b_sf.Apply(cb, 0.80, { "DY_1b", "DY_2b" });
+    DY2b_sf.Apply(cb, 1.01, { "DY_0b" });
+    DY2b_sf.Apply(cb, 1.36, { "DY_1b", "DY_2b" });
+
+    const Uncertainty qcd_norm{CorrelationRange::Category, UncDistributionType::lnN, "qcd_norm"};
+    const Uncertainty qcd_btag_relax{CorrelationRange::Category, UncDistributionType::shape, "qcd_btag_relax"};
+    qcd_norm.Apply(cb, 1.06, { "QCD" });
+    qcd_btag_relax.Apply(cb, { "QCD" });
+
 }
 
 } // namespace stat_models
