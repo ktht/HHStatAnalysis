@@ -7,7 +7,7 @@ from optparse import OptionParser
 import ROOT
 import numpy as np
 from HHStatAnalysis.AnalyticalModels.NonResonantModel import NonResonantModel
- 
+
 parser = OptionParser()
 parser.add_option("--kl", type="float", dest="kll", help="Multiplicative factor in the H trilinear wrt to SM")
 parser.add_option("--kt", type="float", dest="ktt", help="Multiplicative factor in the H top Yukawa wrt to SM")
@@ -35,15 +35,16 @@ def main():
   # declare the 2D ===> should be global variable
   model = NonResonantModel()
   # obtaining BSM/SM coeficients
-  dumb = model.ReadCoefficients("../data/coefficientsByBin_klkt.txt",model.effSM,model.effSum,model.MHH,model.COSTS,model.A1,model.A3,model.A7) 
+  dumb = model.ReadCoefficients("../data/coefficientsByBin_klkt.txt") #,model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7) 
   counteventSM=0
   sumWeight=0
   # now loop over events, calculate weights using the coeffitients and  plot histograms
   # We sum SM + box + the benchmarks from 2-13 
   # read the 2D histo referent to the sum of events
-  fileHH=ROOT.TFile("../../Support/NonResonant/data/Hist2DSum_V0_SM_box.root")
+  fileHH=ROOT.TFile("../../../Support/NonResonant/Hist2DSum_V0_SM_box.root")
   sumHAnalyticalBin = fileHH.Get("SumV0_AnalyticalBin")
-  sumHBenchBin = fileHH.Get("SumV0_AnalyticalBin")
+  calcSumOfWeights = model.getNormalization(kl, kt,sumHAnalyticalBin)  # this input is flexible, tatabb may have only the SM
+  # print "sum of weights calculated" , calcSumOfWeights 
   # read the events
   pathBenchEvents="/afs/cern.ch/work/a/acarvalh/public/toAnamika/GF_HH_BSM/" # events to reweight   
   file=ROOT.TFile(pathBenchEvents+"events_SumV0.root")
@@ -54,6 +55,7 @@ def main():
   CalcCost = np.zeros((nev))
   CalcWeight = np.zeros((nev)) 
   countevent = 0
+  #for kll in range(-5,5) : model.getNormalization(kll, kt,sumHBenchBin)
   for iev in range(0,nev) :
       tree.GetEntry(iev)
       mhh = tree.Genmhh
@@ -63,7 +65,7 @@ def main():
       bmhh = sumHAnalyticalBin.GetXaxis().FindBin(mhh)
       bcost = sumHAnalyticalBin.GetYaxis().FindBin(cost)
       effSumV0 = sumHAnalyticalBin.GetBinContent(bmhh,bcost)  # quantity of simulated events in that bin (without cuts)
-      weight = model.getScaleFactor(mhhcost,kl, kt,model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7, effSumV0) 
+      weight = model.getScaleFactor(mhhcost,kl, kt, effSumV0) / calcSumOfWeights  # model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7, effSumV0) 
       #############################################
       # fill histograms to test
       #############################################
@@ -74,7 +76,7 @@ def main():
                CalcWeight[countevent] = weight 
                countevent+=1
                sumWeight+=weight
-  print "plotted hostogram reweighted from ",countevent," events, ", float(100*(nev-countevent)/nev)," % of the events was lost in empty bins in SM simulation"
+  print "plotted histogram reweighted from ",countevent," events, ", float(100*(nev-countevent)/nev)," % of the events was lost in empty bins in SM simulation"
   print "sum of weights",sumWeight
   ############################################################################################################################
   # Draw test histos
