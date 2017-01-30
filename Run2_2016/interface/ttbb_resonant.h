@@ -3,12 +3,13 @@ This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 
 #pragma once
 
-#include "StatModel.h"
+#include "HHStatAnalysis/StatModels/interface/StatModel.h"
 
 namespace hh_analysis {
 namespace stat_models {
+namespace Run2_2016 {
 
-class bbtautau_Resonant : public StatModel {
+class ttbb_resonant : public StatModel {
 public:
     static const v_str ana_name;
     static const v_str eras;
@@ -19,7 +20,7 @@ public:
     static constexpr double bbb_unc_threshold = 0.1;
     static constexpr double bin_merge_threashold = 0.5;
 
-    bbtautau_Resonant(const StatModelDescriptor& _desc);
+    ttbb_resonant(const StatModelDescriptor& _desc);
     virtual void CreateDatacards(const std::string& shapes_file, const std::string& output_path) override;
 
 private:
@@ -33,5 +34,6 @@ private:
     const v_str signal_processes, all_mc_processes;
 };
 
+} // namespace Run2_2016
 } // namespace stat_models
 } // namespace hh_analysis

@@ -25,17 +25,17 @@ ENUM_NAMES(UncDistributionType) = {
 };
 
 struct Uncertainty {
+    std::string name;
     CorrelationRange correlation_range = CorrelationRange::Experiment;
     UncDistributionType distr_type = UncDistributionType::lnN;
-    std::string name;
     std::vector<std::string> analysis_names, channel_names, category_names;
 
     Uncertainty() {}
-    Uncertainty(CorrelationRange _correlation_range, UncDistributionType _distr_type, const std::string& _name,
+    Uncertainty(const std::string& _name, CorrelationRange _correlation_range, UncDistributionType _distr_type,
                 const std::vector<std::string>& _analysis_names = {},
                 const std::vector<std::string>& _channel_names = {},
                 const std::vector<std::string>& _category_names = {}) :
-        correlation_range(_correlation_range), distr_type(_distr_type), name(_name), analysis_names(_analysis_names),
+        name(_name), correlation_range(_correlation_range), distr_type(_distr_type), analysis_names(_analysis_names),
         channel_names(_channel_names), category_names(_category_names)
     {}
 
@@ -106,8 +106,8 @@ struct Uncertainty {
         ss << name << sep;
         if(correlation_range <= CorrelationRange::Analysis)
             ss << analysis << sep;
-//        if(correlation_range <= CorrelationRange::Channel)
-//            ss << channel << sep;
+        if(correlation_range == CorrelationRange::Channel)
+            ss << channel << sep;
         if(correlation_range <= CorrelationRange::Category)
             ss << category << sep;
         ss << era;
@@ -150,10 +150,23 @@ struct Uncertainty {
     {
         Apply(cb, 1.0, processes, processes_2, processes_3);
     }
+};
+
+struct GlobalUncertainty : Uncertainty {
+    double value;
+
+    GlobalUncertainty(const std::string& _name, CorrelationRange _correlation_range, UncDistributionType _distr_type,
+                      double _value = std::numeric_limits<double>::quiet_NaN())
+        : Uncertainty(_name, _correlation_range, _distr_type), value(_value) {}
 
     void ApplyGlobal(ch::CombineHarvester& cb, const std::vector<std::string>& processes,
                      const std::vector<std::string>& processes_2 = {},
-                     const std::vector<std::string>& processes_3 = {}) const;
+                     const std::vector<std::string>& processes_3 = {}) const
+    {
+        if(std::isnan(value))
+            throw analysis::exception("Global value for uncertainty '%1%' is not defined.") % FullName();
+        Apply(cb, value, processes, processes_2, processes_3);
+    }
 };
 
 } // namespace hh_analysis

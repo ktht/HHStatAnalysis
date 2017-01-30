@@ -5,30 +5,30 @@ This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 #include "CombineHarvester/CombineTools/interface/Systematics.h"
 #include "CombineHarvester/CombineTools/interface/CardWriter.h"
 #include "CombineHarvester/CombinePdfs/interface/MorphFunctions.h"
-#include "HHStatAnalysis/StatModels/interface/bbtautau_Resonant.h"
+#include "HHStatAnalysis/Run2_2016/interface/ttbb_resonant.h"
 #include "HHStatAnalysis/Core/interface/exception.h"
 #include "HHStatAnalysis/Core/interface/Tools.h"
 #include "HHStatAnalysis/Core/interface/TextIO.h"
 #include "HHStatAnalysis/Core/interface/RootExt.h"
-#include "HHStatAnalysis/StatModels/interface/CommonUncertainties.h"
+#include "HHStatAnalysis/Run2_2016/interface/CommonUncertainties.h"
 
 namespace hh_analysis {
 namespace stat_models {
+namespace Run2_2016 {
 
-const StatModel::v_str bbtautau_Resonant::ana_name = { "hh_ttbb" };
-const StatModel::v_str bbtautau_Resonant::eras = { "13TeV" };
-const StatModel::v_str bbtautau_Resonant::bkg_mc_processes = { "DY_0b", "DY_1b", "DY_2b", "TT", "tW", "VV", "W" };
-const StatModel::v_str bbtautau_Resonant::bkg_data_driven_processes = { "QCD" };
-const StatModel::v_str bbtautau_Resonant::bkg_all_processes
-                                        = ch::JoinStr({ bkg_mc_processes, bkg_data_driven_processes });
+const StatModel::v_str ttbb_resonant::ana_name = { "hh_ttbb" };
+const StatModel::v_str ttbb_resonant::eras = { "13TeV" };
+const StatModel::v_str ttbb_resonant::bkg_mc_processes = { "DY_0b", "DY_1b", "DY_2b", "TT", "tW", "VV", "W" };
+const StatModel::v_str ttbb_resonant::bkg_data_driven_processes = { "QCD" };
+const StatModel::v_str ttbb_resonant::bkg_all_processes = ch::JoinStr({ bkg_mc_processes, bkg_data_driven_processes });
 
-bbtautau_Resonant::bbtautau_Resonant(const StatModelDescriptor& _desc) :
+ttbb_resonant::ttbb_resonant(const StatModelDescriptor& _desc) :
     StatModel(_desc), signal_processes({ desc.signal_process }),
     all_mc_processes(ch::JoinStr({ signal_processes, bkg_mc_processes }))
 {
 }
 
-std::pair<std::string, std::string> bbtautau_Resonant::ShapeNameRule(bool use_mass) const
+std::pair<std::string, std::string> ttbb_resonant::ShapeNameRule(bool use_mass) const
 {
     std::pair<std::string, std::string> result;
     std::ostringstream ss;
@@ -41,7 +41,7 @@ std::pair<std::string, std::string> bbtautau_Resonant::ShapeNameRule(bool use_ma
     return result;
 }
 
-void bbtautau_Resonant::ExtractShapes(ch::CombineHarvester& combine_harvester, const std::string& shapes_file,
+void ttbb_resonant::ExtractShapes(ch::CombineHarvester& combine_harvester, const std::string& shapes_file,
                                       bool is_signal) const
 {
     const auto& processes = is_signal ? signal_processes : bkg_all_processes;
@@ -50,7 +50,7 @@ void bbtautau_Resonant::ExtractShapes(ch::CombineHarvester& combine_harvester, c
                                                             shape_name_rules.second);
 }
 
-ch::Categories bbtautau_Resonant::GetChannelCategories(const std::string& channel)
+ch::Categories ttbb_resonant::GetChannelCategories(const std::string& channel)
 {
     ch::Categories ch_categories;
     for(size_t n = 0; n < desc.categories.size(); ++n) {
@@ -61,7 +61,7 @@ ch::Categories bbtautau_Resonant::GetChannelCategories(const std::string& channe
     return ch_categories;
 }
 
-void bbtautau_Resonant::CreateDatacards(const std::string& shapes_file, const std::string& output_path)
+void ttbb_resonant::CreateDatacards(const std::string& shapes_file, const std::string& output_path)
 {
     ch::CombineHarvester harvester;
 
@@ -107,46 +107,46 @@ void bbtautau_Resonant::CreateDatacards(const std::string& shapes_file, const st
     }
 }
 
-void bbtautau_Resonant::AddSystematics(ch::CombineHarvester& cb)
+void ttbb_resonant::AddSystematics(ch::CombineHarvester& cb)
 {
     using ch::syst::SystMap;
     using CU = CommonUncertainties;
 
-    CU::lumi.ApplyGlobal(cb, signal_processes, { "TT", "tW", "VV", "W" });
-    CU::cr_DiBoson.ApplyGlobal(cb, { "VV" });
-    CU::cr_TTbar.ApplyGlobal(cb, { "TT" });
+    CU::lumi().ApplyGlobal(cb, signal_processes, { "TT", "tW", "VV", "W" });
+    CU::cr_DiBoson().ApplyGlobal(cb, { "VV" });
+    CU::cr_TTbar().ApplyGlobal(cb, { "TT" });
 
-    CU::scale_j.Apply(cb, 1.02, signal_processes);
-    CU::scale_j.Apply(cb, 1.04, { "TT", "tW", "VV", "W" });
-    CU::scale_b.Apply(cb, 1.02, signal_processes, { "TT", "tW", "VV", "W" });
+    CU::scale_j().Apply(cb, 1.02, signal_processes);
+    CU::scale_j().Apply(cb, 1.04, { "TT", "tW", "VV", "W" });
+    CU::scale_b().Apply(cb, 1.02, signal_processes, { "TT", "tW", "VV", "W" });
 
-    CU::eff_btag.Apply(cb, 1.02, signal_processes, { "DY_2b" });
-    CU::eff_btag.Apply(cb, 1.03, { "TT", "DY_1b", "VV", "W" });
-    CU::eff_btag.Apply(cb, 1.04, { "DY_0b", "tW" });
+    CU::eff_btag().Apply(cb, 1.02, signal_processes, { "DY_2b" });
+    CU::eff_btag().Apply(cb, 1.03, { "TT", "DY_1b", "VV", "W" });
+    CU::eff_btag().Apply(cb, 1.04, { "DY_0b", "tW" });
 
-    CU::eff_e.Channel("eTau").Apply(cb, 1.03, all_mc_processes);
-    CU::eff_mu.Channel("muTau").Apply(cb, 1.02, all_mc_processes);
-    CU::eff_tau.Channels({"eTau", "muTau"}).Apply(cb, 1.06, all_mc_processes);
-    CU::eff_tau.Channel("tauTau").Apply(cb, 1.08, all_mc_processes);
-    CU::scale_tau.Apply(cb, all_mc_processes);
+    CU::eff_e().Channel("eTau").Apply(cb, 1.03, all_mc_processes);
+    CU::eff_mu().Channel("muTau").Apply(cb, 1.02, all_mc_processes);
+    CU::eff_tau().Channels({"eTau", "muTau"}).Apply(cb, 1.06, all_mc_processes);
+    CU::eff_tau().Channel("tauTau").Apply(cb, 1.08, all_mc_processes);
+    CU::scale_tau().Apply(cb, all_mc_processes);
 
-    CU::topPt.Apply(cb, { "TT" });
+    CU::topPt().Apply(cb, { "TT" });
 
-    const Uncertainty DY0b_sf{CorrelationRange::Analysis, UncDistributionType::lnN, "DY0b_sf"};
-    const Uncertainty DY1b_sf{CorrelationRange::Analysis, UncDistributionType::lnN, "DY1b_sf"};
-    const Uncertainty DY2b_sf{CorrelationRange::Analysis, UncDistributionType::lnN, "DY2b_sf"};
+    const Uncertainty DY0b_sf("DY0b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
+    const Uncertainty DY1b_sf("DY1b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
+    const Uncertainty DY2b_sf("DY2b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
     DY0b_sf.Apply(cb, 1.01, { "DY_0b", "DY_1b", "DY_2b" });
     DY1b_sf.Apply(cb, 0.98, { "DY_0b" });
     DY1b_sf.Apply(cb, 0.80, { "DY_1b", "DY_2b" });
     DY2b_sf.Apply(cb, 1.01, { "DY_0b" });
     DY2b_sf.Apply(cb, 1.36, { "DY_1b", "DY_2b" });
 
-    const Uncertainty qcd_norm{CorrelationRange::Category, UncDistributionType::lnN, "qcd_norm"};
-    const Uncertainty qcd_btag_relax{CorrelationRange::Category, UncDistributionType::shape, "qcd_btag_relax"};
+    const Uncertainty qcd_norm("qcd_norm", CorrelationRange::Category, UncDistributionType::lnN);
+    const Uncertainty qcd_btag_relax("qcd_btag_relax", CorrelationRange::Category, UncDistributionType::shape);
     qcd_norm.Apply(cb, 1.06, { "QCD" });
     qcd_btag_relax.Apply(cb, { "QCD" });
-
 }
 
+} // namespace Run2_2016
 } // namespace stat_models
 } // namespace hh_analysis

@@ -30,6 +30,7 @@ protected:
 };
 
 using StatModelPtr = std::shared_ptr<StatModel>;
+using StatModelCreator = StatModelPtr (*)(const char*, const StatModelDescriptor*);
 
 } // namespace stat_models
 } // namespace hh_analysis
