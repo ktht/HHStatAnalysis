@@ -72,21 +72,12 @@ class NonResonantModel:
       HistW= float((1000.-250.)*2)
       # print HistoAllEvents.GetNbinsX(),HistoAllEvents.GetNbinsY() 
       for binmhh in range (0,HistoAllEvents.GetNbinsX()) :
-         WX = HistoAllEvents.GetXaxis().GetBinWidth(binmhh+1)
+         #WX = HistoAllEvents.GetXaxis().GetBinWidth(binmhh+1)
          for bincost in range (0,HistoAllEvents.GetNbinsY()) :
-            WY = HistoAllEvents.GetYaxis().GetBinWidth(bincost+1)
+            #WY = HistoAllEvents.GetYaxis().GetBinWidth(bincost+1)
             A = [self.A1[bincost][binmhh],self.A3[bincost][binmhh],self.A7[bincost][binmhh]]
             #if HistoAllEvents.GetBinContent(binmhh,bincost) > 0 : 
             sumOfWeights+=float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
-            sumW+=self.functionGF(kl,kt,0,0,0,A13tev)
-            sumW2+=self.functionGF(kl,kt,0,0,0,A)
-            sumSM+=self.effSM[bincost][binmhh]
-            #/ HistoAllEvents.GetBinContent(binmhh,bincost) # / (WX*WY)
-            # sumW+=(WX*WY)
-            # HistoAllEvents.GetBinWidth(binmhh,bincost) #.GetBinContent(binmhh,bincost)
-      #print sumW, sumW2,sumSM, HistW
-      #A = [self.A1[1][5],self.A3[1][5],self.A7[1][5]]
-      #print "in bin 5,1", float(self.effSM[1][5]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
       return float(sumOfWeights)
 
     # distribute the calculated GenMHH and CostS in the bins numbering  (matching the coefficientsByBin_klkt.txt)
