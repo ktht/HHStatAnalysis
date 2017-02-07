@@ -19,6 +19,7 @@ parser.add_argument('--output', required=True, dest='output_path', type=str, met
 parser.add_argument('--parallel', required=False, dest='n_parallel', type=int, default=8, metavar='N',
                     help="number of parallel jobs")
 parser.add_argument('--plotOnly', action="store_true", help="Run only plots.")
+parser.add_argument('--collectAndPlot', action="store_true", help="Run only plots.")
 parser.add_argument('shapes_file', type=str, nargs='+', help="file with input shapes")
 
 args = parser.parse_args()
@@ -32,7 +33,8 @@ if not os.path.exists(args.output_path):
 
 model_desc = HH.LoadDescriptor(args.cfg, args.model_desc)
 
-run_limits = not args.plotOnly
+run_limits = not args.plotOnly and not args.collectAndPlot
+collect_limits = run_limits or args.collectAndPlot
 
 if run_limits:
     shapes_file = args.shapes_file[0]
@@ -57,6 +59,7 @@ if limit_type == 'model_independent':
         sh_call('combineTool.py -M Asymptotic -d */*/workspace.root --there -n .limit --parallel {}'.format(
                 args.n_parallel), "error while executing combine")
 
+    if collect_limits:
         sh_call('combineTool.py -M CollectLimits */*/*.limit.* --use-dirs -o {}'.format(limit_json_file),
                 "error while collecting limits")
 
@@ -74,7 +77,7 @@ elif limit_type == 'MSSM':
     th_models_path, th_model_file = os.path.split(th_model_file_full_path)
     ch_dir(args.output_path)
 
-    if run_limits:
+    if run_limits or collect_limits:
         grid_dict = { 'opts'  : '--singlePoint 1.0', 'POIs'  : [ 'mA', 'tanb' ], 'grids' : [] }
         grid_dict['grids'].append([
             '{}:{}|{}'.format(model_desc.grid_x.min(), model_desc.grid_x.max(), model_desc.grid_x.step()),
@@ -101,13 +104,15 @@ elif limit_type == 'MSSM':
                     "error while executing text to workspace")
 
         work_path = channel + '/work'
-        os.makedirs(work_path)
+        if not os.path.exists(work_path):
+            os.makedirs(work_path)
         ch_dir(work_path)
 
+        asymptoticGrid_cmd = 'combineTool.py -M AsymptoticGrid ../../{} -d ../{} --parallel {}'.format(
+                             grid_file_name, workspace_file, args.n_parallel)
         if run_limits:
-            asymptoticGrid_cmd = 'combineTool.py -M AsymptoticGrid ../../{} -d ../{} --parallel {}'.format(
-                                 grid_file_name, workspace_file, args.n_parallel)
             sh_call(asymptoticGrid_cmd, "error while executing combine")
+        if collect_limits:
             sh_call(asymptoticGrid_cmd, "error while collecting jobs")
 
         output_name = '../../limits_{}_{}'.format(model_desc.limit_type, channel)

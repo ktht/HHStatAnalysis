@@ -128,9 +128,9 @@ void ttbb_resonant::AddSystematics(ch::CombineHarvester& cb)
     CU::eff_mu().Channel("muTau").Apply(cb, 1.02, all_mc_processes);
     CU::eff_tau().Channels({"eTau", "muTau"}).Apply(cb, 1.06, all_mc_processes);
     CU::eff_tau().Channel("tauTau").Apply(cb, 1.08, all_mc_processes);
-    CU::scale_tau().Apply(cb, all_mc_processes);
+//    CU::scale_tau().Apply(cb, all_mc_processes);
 
-    CU::topPt().Apply(cb, { "TT" });
+//    CU::topPt().Apply(cb, { "TT" });
 
     const Uncertainty DY0b_sf("DY0b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
     const Uncertainty DY1b_sf("DY1b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
@@ -142,9 +142,9 @@ void ttbb_resonant::AddSystematics(ch::CombineHarvester& cb)
     DY2b_sf.Apply(cb, 1.36, { "DY_1b", "DY_2b" });
 
     const Uncertainty qcd_norm("qcd_norm", CorrelationRange::Category, UncDistributionType::lnN);
-    const Uncertainty qcd_btag_relax("qcd_btag_relax", CorrelationRange::Category, UncDistributionType::shape);
+//    const Uncertainty qcd_btag_relax("qcd_btag_relax", CorrelationRange::Category, UncDistributionType::shape);
     qcd_norm.Apply(cb, 1.06, { "QCD" });
-    qcd_btag_relax.Apply(cb, { "QCD" });
+//    qcd_btag_relax.Apply(cb, { "QCD" });
 }
 
 } // namespace Run2_2016
