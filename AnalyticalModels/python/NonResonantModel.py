@@ -24,7 +24,7 @@ class NonResonantModel:
     # Declare the function
     def functionGF(self, kl,kt,c2,cg,c2g,A): return A[0]*kt**4 + (A[1]*kt**2 )*kl**2 + A[2]*kt*kl*kt**2 
 
-    def ReadCoefficients(self,inputFileName,effSM,effSum,MHH,COSTS,A1,A3,A7):
+    def ReadCoefficients(self,inputFileName) : #,effSM,MHH,COSTS,A1,A3,A7):
         # here you should return TH2D histogram with BSM/SM coefficientes to calculate the scale factors for m_hh vs. cos_theta_star
         # loop over events and efficency calculation will be channel-dependent, so corresponding code
         # should go to the other file
@@ -46,15 +46,15 @@ class NonResonantModel:
                   if (char.isdigit() or (char in num_char) or (char in num2) or (char in num3)): num = num + char
               try: l.append(float(num))
               except ValueError: pass
-          MHH[countercost][countermhh] = l[1] 
-          COSTS[countercost][countermhh] = l[2] 
-          effSM[countercost][countermhh] = l[3]/10000. # in units of 10k events
-          effSum[countercost][countermhh] = l[4]/10000. # in units of 10k events # 12 JHEP benchmarks 
+          self.MHH[countercost][countermhh] = l[1] 
+          self.COSTS[countercost][countermhh] = l[2] 
+          self.effSM[countercost][countermhh] = l[3]/10000. # in units of 10k events
+          self.effSum[countercost][countermhh] = l[4]/10000. # in units of 10k events # 12 JHEP benchmarks 
           # Just for testing purposes the above contains the number of events by bin from an ensenble of events 
           # calculated from the 12 benchmarks defined in 1507.02245v4 (JHEP version) each one with 100k events
-          A1[countercost][countermhh] = l[5]
-          A3[countercost][countermhh] = l[6]
-          A7[countercost][countermhh] = l[7]
+          self.A1[countercost][countermhh] = l[5]
+          self.A3[countercost][countermhh] = l[6]
+          self.A7[countercost][countermhh] = l[7]
           countercost+=1
           if countercost == 3 :
              countercost=0
@@ -63,8 +63,34 @@ class NonResonantModel:
         # and at the end of the function return it
         print "Stored coefficients by bin"
 
+    def getNormalization(self,kl, kt,HistoAllEvents):   
+      sumOfWeights = 0 
+      A13tev = [2.09078, 0.282307, -1.37309]
+      sumW=0
+      sumW2=0
+      sumSM=0
+      HistW= float((1000.-250.)*2)
+      # print HistoAllEvents.GetNbinsX(),HistoAllEvents.GetNbinsY() 
+      for binmhh in range (0,HistoAllEvents.GetNbinsX()) :
+         WX = HistoAllEvents.GetXaxis().GetBinWidth(binmhh+1)
+         for bincost in range (0,HistoAllEvents.GetNbinsY()) :
+            WY = HistoAllEvents.GetYaxis().GetBinWidth(bincost+1)
+            A = [self.A1[bincost][binmhh],self.A3[bincost][binmhh],self.A7[bincost][binmhh]]
+            #if HistoAllEvents.GetBinContent(binmhh,bincost) > 0 : 
+            sumOfWeights+=float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
+            sumW+=self.functionGF(kl,kt,0,0,0,A13tev)
+            sumW2+=self.functionGF(kl,kt,0,0,0,A)
+            sumSM+=self.effSM[bincost][binmhh]
+            #/ HistoAllEvents.GetBinContent(binmhh,bincost) # / (WX*WY)
+            # sumW+=(WX*WY)
+            # HistoAllEvents.GetBinWidth(binmhh,bincost) #.GetBinContent(binmhh,bincost)
+      #print sumW, sumW2,sumSM, HistW
+      #A = [self.A1[1][5],self.A3[1][5],self.A7[1][5]]
+      #print "in bin 5,1", float(self.effSM[1][5]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
+      return float(sumOfWeights)
+
     # distribute the calculated GenMHH and CostS in the bins numbering  (matching the coefficientsByBin_klkt.txt)
-    def getScaleFactor(self,mhhcost,kl, kt,effSM,MHH,COSTS,A1,A3,A7,effSumV0):   
+    def getScaleFactor(self,mhhcost,kl, kt, effSumV0) : # ,effSM,MHH,COSTS,A1,A3,A7):   
        binGenMHH = [250.,270.,300.,330.,360.,390., 420.,450.,500.,550.,600.,700.,800.,1000.]
        binGenCostS  = [ -1., -0.55,0.55,1.  ]
        # determine from which bin the event belong
@@ -82,8 +108,8 @@ class NonResonantModel:
        A13tev = [2.09078, 0.282307, -1.37309]
        #if effSum > 0 and A1 > 0: 
        if effSumV0 > 0 :
-          A = [A1[bincost][binmhh],A3[bincost][binmhh],A7[bincost][binmhh]]
-          effBSM = float(effSM[bincost][binmhh]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
+          A = [self.A1[bincost][binmhh],self.A3[bincost][binmhh],self.A7[bincost][binmhh]]
+          effBSM = float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
           #if v1 ==0 : CalcWeight = effBSM/float(effSum[bincost][binmhh]) # ==> JHEP sum in denominator
           CalcWeight = effBSM/float(effSumV0) # ==> V0 sum in denominator (Moriond 2016)
           return CalcWeight
