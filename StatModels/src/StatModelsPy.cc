@@ -41,7 +41,9 @@ BOOST_PYTHON_MODULE(libHHStatAnalysisStatModels)
         .def(map_indexing_suite<StrVectMap>());
     enum_<LimitType>("LimitType")
         .value("model_independent", LimitType::ModelIndependent)
-        .value("MSSM", LimitType::MSSM);
+        .value("SM", LimitType::SM)
+        .value("MSSM", LimitType::MSSM)
+        .value("NonResonant_BSM", LimitType::NonResonant_BSM);
     class_<RangeWithStep<double>>("RangeWithStep", init<>())
         .def(init<double, double, double>())
         .def("min", &RangeWithStep<double>::min)

@@ -2,6 +2,9 @@
 This file is part of https://github.com/cms-hh/StatAnalysis. */
 
 #include "HHStatAnalysis/Run2_2016/interface/ttbb_resonant.h"
+#include "HHStatAnalysis/Run2_2016/interface/ttbb_nonresonant.h"
+
+#define MAKE_MODEL(model) if(name == #model) return std::make_shared<model>(*model_descriptor)
 
 extern "C" hh_analysis::stat_models::StatModelPtr create_stat_model(
         const char* stat_model_name, const hh_analysis::StatModelDescriptor* model_descriptor)
@@ -12,7 +15,7 @@ extern "C" hh_analysis::stat_models::StatModelPtr create_stat_model(
         throw analysis::exception("Null pointer is passed to create_stat_model function.");
 
     const std::string name(stat_model_name);
-    if(name == "ttbb_resonant")
-        return std::make_shared<ttbb_resonant>(*model_descriptor);
+    MAKE_MODEL(ttbb_resonant);
+    MAKE_MODEL(ttbb_nonresonant);
     throw analysis::exception("Stat model '%1%' not found.") % name;
 }

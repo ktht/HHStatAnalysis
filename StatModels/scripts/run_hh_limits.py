@@ -6,6 +6,7 @@ import os
 import argparse
 import glob
 import json
+from sets import Set
 from HHStatAnalysis.StatModels.run_hh_limits_helpers import *
 import libHHStatAnalysisStatModels as HH
 
@@ -50,7 +51,7 @@ if run_limits:
             "error while executing create_hh_datacards")
 
 limit_type = str(model_desc.limit_type)
-if limit_type == 'model_independent':
+if limit_type in Set(['model_independent', 'SM', 'NonResonant_BSM']):
     ch_dir(args.output_path)
     if run_limits:
         sh_call('combineTool.py -M T2W -i */* -o workspace.root --parallel {}'.format(args.n_parallel),
@@ -69,8 +70,13 @@ if limit_type == 'model_independent':
 
     for input_file in glob.glob(limit_json_pattern):
         output_name = os.path.splitext(input_file)[0]
+        y_title = None
+        if limit_type == 'SM':
+            y_title = "95% CL limit on #sigma / #sigma(SM)"
+        else:
+            y_title = "95% CL limit on #sigma x BR (pb)"
         sh_call('plotLimits.py {} --output {} --auto-style --y-title \'{}\' --logy --show {}'.format(input_file,
-                output_name, "95% CL limit on #sigma (pb)", limits_to_show), "error while plotting limits")
+                output_name, y_title, limits_to_show), "error while plotting limits")
 
 elif limit_type == 'MSSM':
     th_model_file_full_path = os.path.abspath(model_desc.th_model_file)
