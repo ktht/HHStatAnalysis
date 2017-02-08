@@ -43,7 +43,7 @@ if run_limits:
         shapes_file = '{}/shapes.root'.format(args.output_path)
         hadd_command = 'hadd -f9 {}'.format(shapes_file)
         for file in args.shapes_file:
-            hadd_command += '"{}"'.format(file)
+            hadd_command += ' "{}"'.format(file)
         sh_call(hadd_command, "error while executing hadd for input files")
 
     sh_call('create_hh_datacards --cfg {} --model-desc {} --shapes {} --output {}'
@@ -56,9 +56,11 @@ if limit_type in Set(['model_independent', 'SM', 'NonResonant_BSM']):
     if run_limits:
         sh_call('combineTool.py -M T2W -i */* -o workspace.root --parallel {}'.format(args.n_parallel),
                 "error while executing text to workspace")
-
-        sh_call('combineTool.py -M Asymptotic -d */*/workspace.root --there -n .limit --parallel {}'.format(
-                args.n_parallel), "error while executing combine")
+        combine_cmd = 'combineTool.py -M Asymptotic -d */*/workspace.root --there -n .limit --parallel {}' \
+                      .format(args.n_parallel)
+        if model_desc.blind:
+            combine_cmd += ' --run blind'
+        sh_call(combine_cmd, "error while executing combine")
 
     if collect_limits:
         sh_call('combineTool.py -M CollectLimits */*/*.limit.* --use-dirs -o {}'.format(limit_json_file),
@@ -116,6 +118,9 @@ elif limit_type == 'MSSM':
 
         asymptoticGrid_cmd = 'combineTool.py -M AsymptoticGrid ../../{} -d ../{} --parallel {}'.format(
                              grid_file_name, workspace_file, args.n_parallel)
+        if model_desc.blind:
+            asymptoticGrid_cmd += ' -t -1'
+
         if run_limits:
             sh_call(asymptoticGrid_cmd, "error while executing combine")
         if collect_limits:
