@@ -16,6 +16,7 @@ parser.add_argument('--output', required=True, dest='output', type=str, metavar=
                     help="path were to store limits")
 parser.add_argument('--analysis', required=True, dest='analysis', type=str, metavar='OUTPUT_FILE',
                     help="res_lm, res_hm or nonres")
+parser.add_argument('--ignoreShapeUnc', action="store_true", help="Ignore shape uncertainties.")
 args = parser.parse_args()
 
 def LoadHistogram(file, hist_name, raise_exception = True):
@@ -31,42 +32,129 @@ def NumToName(x):
     s = re.sub('-', 'm', s)
     return re.sub(r'\.', 'p', s)
 
+def OpenLLRFile(channel):
+    file_name = '{}/{}.root'.format(args.input_path, channel)
+    return TFile(file_name, 'OPEN')
 
-output = TFile(args.output, 'RECREATE')
-os.chdir(args.input_path)
-
-file_name_pattern = '{}.root'
-hist_name_pattern = '{}_{}_{}_{}'
+def GetLLRHistName(sample, category, region, variable, uncertainty = None):
+    hist_name = '{}_{}_{}_{}'.format(sample, category, region, variable)
+    if uncertainty != None:
+        hist_name += '_{}'.format(uncertainty)
+    return hist_name
 
 signal_region = 'SR'
-
-bins = {
-    'data_obs'  : [ [ 'data_obs' ], [] ],
-    'TT'        : [ [ 'TT' ], [] ],
-    'DY_0b'     : [ [ 'DY0b' ], [] ],
-    'DY_1b'     : [ [ 'DY1b' ], [] ],
-    'DY_2b'     : [ [ 'DY2b' ], [] ],
-    'QCD'       : [ [ 'QCD' ], [] ],
-    'W'         : [ [ 'WJets' ], [] ],
-    'tW'        : [ [ 'TWtop', 'TWantitop' ], [] ],
-    'VV'        : [ [ 'WWToLNuQQ', 'WZTo1L1Nu2Q', 'WZTo1L3Nu', 'WZTo2L2Q', 'ZZTo2L2Q' ], [] ]
+regions = {
+    'SR'        : '',
+    'SStight'   : 'SS_iso',
+    'OSinviso'  : 'OS_antiiso',
+    'SSinviso'  : 'SS_antiiso'
 }
 
+era = '13TeV'
+scale_variations = [ 'Up', 'Down' ]
 shape_variable = None
+
+class CorrelationRange:
+    Category, Channel, Analysis, Experiment, LHC = range(5)
+
+class UncDesc:
+    def __init__(self, name, correlation_range, LLR_name):
+        self.name = name
+        self.correlation_range = correlation_range
+        self.LLR_name = LLR_name
+        self.shape_variable = None
+
+    def GetHistName(self, sample, channel, category, scale_variation):
+        hist_name = '{}'.format(sample)
+        if self.correlation_range <= CorrelationRange.Experiment:
+            hist_name += '_CMS'
+        hist_name += '_shape_{}'.format(self.name)
+        if self.correlation_range <= CorrelationRange.Analysis:
+            hist_name += '_hh_ttbb'
+        if self.correlation_range <= CorrelationRange.Channel:
+            hist_name += '_{}'.format(channel)
+        if self.correlation_range <= CorrelationRange.Category:
+            hist_name += '_{}'.format(category)
+        hist_name += '_{}{}'.format(era, scale_variation)
+        return hist_name
+
+    def GetLLRHistName(self, sample, channel, category, region, scale_variation):
+        variable = None
+        LLR_unc = None
+        if self.shape_variable == None:
+            variable = shape_variable
+            LLR_unc = '{}{}'.format(self.LLR_name, scale_variation)
+        else:
+            variable = '{}{}'.format(self.shape_variable, scale_variation)
+        return GetLLRHistName(sample, category, region, variable, LLR_unc)
+
+class BinDesc:
+    def __init__(self, sample_name, LLR_sample_names, points_desc = [], unc_list = [], save_all_regions = False):
+        self.sample_name = sample_name
+        self.LLR_sample_names = LLR_sample_names
+        self.unc_list = unc_list
+        self.save_all_regions = save_all_regions
+
+        self.hist_names = {}
+        if len(points_desc) == 0:
+            self.hist_names[sample_name] = LLR_sample_names
+        else:
+            for point in points_desc[2]:
+                hist_name = points_desc[0](sample_name, point)
+                self.hist_names[hist_name] = []
+                for sample_name in LLR_sample_names:
+                    LLR_sample_name = points_desc[1](sample_name, point)
+                    self.hist_names[hist_name].append(LLR_sample_name)
+
+class Hist:
+    def __init__(self, name):
+        self.name = name
+        self.root_hist = None
+
+    def Add(self, root_hist):
+        if self.root_hist == None:
+            self.root_hist = root_hist
+        else:
+            self.root_hist.Add(root_hist)
+
+    def Write(self, dir):
+        if self.root_hist == None:
+            raise RuntimeError('Can not create histogram {} for {}.'.format(self.name, dir.GetName()))
+        dir.WriteTObject(self.root_hist, self.name, 'Overwrite')
+
+tauES_unc = UncDesc('scale_tau', CorrelationRange.Experiment, '')
+topPt_unc = UncDesc('topPt', CorrelationRange.Experiment, 'pttopreweight')
+qcd_btag_relax_unc = UncDesc('qcd_btag_relax', CorrelationRange.Category, 'qcd_RlxToTight')
+
+bins = [
+    BinDesc('data_obs', [ 'data_obs' ], save_all_regions = True),
+    BinDesc('TT', [ 'TT' ], unc_list = [ tauES_unc, topPt_unc ], save_all_regions = True),
+    BinDesc('DY_0b', [ 'DY0b' ], unc_list = [ tauES_unc ], save_all_regions = True),
+    BinDesc('DY_1b', [ 'DY1b' ], unc_list = [ tauES_unc ], save_all_regions = True),
+    BinDesc('DY_2b', [ 'DY2b' ], unc_list = [ tauES_unc ], save_all_regions = True),
+    BinDesc('QCD', [ 'QCD' ], unc_list = [ qcd_btag_relax_unc ], save_all_regions = False),
+    BinDesc('W', [ 'WJets' ], unc_list = [ tauES_unc ], save_all_regions = True),
+    BinDesc('tW', [ 'TWtop', 'TWantitop' ], unc_list = [ tauES_unc ], save_all_regions = True),
+    BinDesc('VV', [ 'WWToLNuQQ', 'WZTo1L1Nu2Q', 'WZTo1L3Nu', 'WZTo2L2Q', 'ZZTo2L2Q' ], unc_list = [ tauES_unc ],
+            save_all_regions = True)
+]
 
 if args.analysis == 'res_lm' or args.analysis == 'res_hm':
     shape_variable = 'HHKin_mass_raw'
     masses = [ 250, 260, 270, 280, 300, 320, 340, 350, 400, 500, 550, 650, 700, 750, 800, 900 ]
     out_name_source = lambda bin_name, point: '{}_M{}'.format(bin_name, point)
     LLR_name_source = lambda sample, point: '{}{}'.format(sample, point)
-    bins['ggRadion_hh_ttbb'] = [ [ 'Radion' ], [ out_name_source, LLR_name_source, masses ] ]
+    bins.append(BinDesc('ggRadion_hh_ttbb', [ 'Radion' ], points_desc = [ out_name_source, LLR_name_source, masses ],
+                        unc_list = [ tauES_unc ]))
+    tauES_unc.shape_variable = 'HHKinFitTau'
 elif args.analysis == 'nonres':
     shape_variable = 'MT2'
-    shift = 20
     k_lambda = range(-20, 32)
     out_name_source = lambda bin_name, point: '{}_kl_{}'.format(bin_name, NumToName(point))
-    LLR_name_source = lambda sample, point: '{}{}'.format(sample, point + shift)
-    bins['ggh_hh_ttbb'] = [ [ 'lambdarew' ], [ out_name_source, LLR_name_source, k_lambda ] ]
+    LLR_name_source = lambda sample, point: '{}{}'.format(sample, point + 20)
+    bins.append(BinDesc('ggh_hh_ttbb', [ 'lambdarew' ], points_desc = [ out_name_source, LLR_name_source, k_lambda ],
+                        unc_list = [ tauES_unc ]))
+    tauES_unc.shape_variable = 'MT2Tau'
 else:
     raise RuntimeError("Unsupported analysis '{}'".format(args.analysis))
 
@@ -87,46 +175,47 @@ channels = {
     'tauTau'    : [ 'TauTau', tauTau_categories ]
 }
 
+output = TFile(args.output, 'RECREATE')
+
 for channel,channel_desc in channels.iteritems():
     LLR_channel = channel_desc[0]
     categories = channel_desc[1]
     print '{} -> {}'.format(LLR_channel, channel)
+    input_file = OpenLLRFile(LLR_channel)
     for category,LLR_category in categories.iteritems():
         output_dir_name = '{}_{}'.format(channel, category)
-        print '\tprocessing {}'.format(category)
-        output_dir = output.mkdir(output_dir_name)
-        file_name = file_name_pattern.format(LLR_channel)
-        input_file = TFile(file_name, 'OPEN')
-
-        for bin,bin_desc in bins.iteritems():
-            LLR_sample_names = bin_desc[0]
-            points_desc = bin_desc[1]
-            hist_names = {}
-            if len(points_desc) == 0:
-                hist_names[bin] = LLR_sample_names
-            else:
-                for point in points_desc[2]:
-                    hist_name = points_desc[0](bin, point)
-                    hist_names[hist_name] = []
-                    for sample_name in LLR_sample_names:
-                        LLR_sample_name = points_desc[1](sample_name, point)
-                        hist_names[hist_name].append(LLR_sample_name)
-            for hist_name,sample_names in hist_names.iteritems():
-                hist = None
-                print '\t\tcreating {}'.format(hist_name)
-                for LLR_sample_name in sample_names:
-                    LLR_hist_name = hist_name_pattern.format(LLR_sample_name, LLR_category,
-                                                             signal_region, shape_variable)
-                    print '\t\t\t {}'.format(LLR_hist_name)
-                    new_hist = LoadHistogram(input_file, LLR_hist_name, True)
-                    # if new_hist == None: continue
-                    if hist == None:
-                        hist = new_hist
-                    else:
+        for LLR_region,region in regions.iteritems():
+            output_dir_name = '{}_{}'.format(channel, category)
+            if len(region) > 0:
+                output_dir_name += '_{}'.format(region)
+            print '\tprocessing {}'.format(output_dir_name)
+            output_dir = output.mkdir(output_dir_name)
+            for bin_desc in bins:
+                if not bin_desc.save_all_regions and LLR_region != signal_region: continue
+                for hist_name,sample_names in bin_desc.hist_names.iteritems():
+                    hist = Hist(hist_name)
+                    print '\t\tcreating {}'.format(hist_name)
+                    for LLR_sample_name in sample_names:
+                        LLR_hist_name = GetLLRHistName(LLR_sample_name, LLR_category, LLR_region, shape_variable)
+                        print '\t\t\t{}'.format(LLR_hist_name)
+                        new_hist = LoadHistogram(input_file, LLR_hist_name, True)
                         hist.Add(new_hist)
-                if hist == None:
-                    raise RuntimeError('Can not create empty histogram for {} {}'.format(channel, category))
-                output_dir.WriteTObject(hist, hist_name, 'Overwrite')
-        input_file.Close()
+                    hist.Write(output_dir)
+                    # if args.ignoreShapeUnc or LLR_region != signal_region: continue
+                    if args.ignoreShapeUnc: continue
+                    print '\t\t\t--- scale variations ---'
+                    for unc in bin_desc.unc_list:
+                        for scale_variation in scale_variations:
+                            unc_hist_name = unc.GetHistName(hist_name, channel, category, scale_variation)
+                            unc_hist = Hist(unc_hist_name)
+                            print '\t\t\tcreating {}'.format(unc_hist_name)
+                            for LLR_sample_name in sample_names:
+                                LLR_unc_hist_name = unc.GetLLRHistName(LLR_sample_name, LLR_channel, LLR_category,
+                                                                       LLR_region, scale_variation)
+                                print '\t\t\t\t{}'.format(LLR_unc_hist_name)
+                                new_unc_hist = LoadHistogram(input_file, LLR_unc_hist_name, True)
+                                unc_hist.Add(new_unc_hist)
+                            unc_hist.Write(output_dir)
+    input_file.Close()
 
 output.Close()
