@@ -98,18 +98,30 @@ git clone -o cms-hh git@github.com:cms-hh/Resources.git HHStatAnalysis/Resources
 GITHUB_USER=$(git config user.github)
 if ! [ "x$GITHUB_USER" = "x" ] ; then
     cd HHStatAnalysis
-    git remote add $GITHUB_USER git@github.com:$GITHUB_USER/HHStatAnalysis.git
-    git fetch $GITHUB_USER
+    git ls-remote git@github.com:$GITHUB_USER/HHStatAnalysis.git &> /dev/null
+    RESULT=$?
+    if [ $RESULT -eq 0 ] ; then
+        git remote add $GITHUB_USER git@github.com:$GITHUB_USER/HHStatAnalysis.git
+        git fetch $GITHUB_USER
+    fi
     cd ..
 
     cd HHStatAnalysis/Plotting
-    git remote add $GITHUB_USER git@github.com:$GITHUB_USER/Plotting.git
-    git fetch $GITHUB_USER
+    git ls-remote git@github.com:$GITHUB_USER/Plotting.git &> /dev/null
+    RESULT=$?
+    if [ $RESULT -eq 0 ] ; then
+        git remote add $GITHUB_USER git@github.com:$GITHUB_USER/Plotting.git
+        git fetch $GITHUB_USER
+    fi
     cd ../..
 
     cd HHStatAnalysis/Resources
-    git remote add $GITHUB_USER git@github.com:$GITHUB_USER/Resources.git
-    git fetch $GITHUB_USER
+    git ls-remote git@github.com:$GITHUB_USER/Resources.git &> /dev/null
+    RESULT=$?
+    if [ $RESULT -eq 0 ] ; then
+        git remote add $GITHUB_USER git@github.com:$GITHUB_USER/Resources.git
+        git fetch $GITHUB_USER
+    fi
     cd ../..
 fi
 
