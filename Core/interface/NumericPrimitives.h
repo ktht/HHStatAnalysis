@@ -170,11 +170,33 @@ struct RangeWithStep : public Range<T> {
     using ValueType = typename Range<T>::ValueType;
     using ConstRefType = typename Range<T>::ConstRefType;
 
+    struct iterator {
+        iterator(const RangeWithStep<T>& _range, size_t _pos) : range(&_range), pos(_pos) {}
+        iterator& operator++() { ++pos; return *this; }
+        iterator operator++(int) { iterator iter(*this); operator++(); return iter; }
+        bool operator==(const iterator& other) { return range == other.range && pos == other.pos;}
+        bool operator!=(const iterator& other) { return !(*this == other); }
+        T operator*() { return range->grid_point_value(pos); }
+    private:
+        const RangeWithStep<T> *range;
+        size_t pos;
+    };
+
     RangeWithStep() : _step(0) {}
     RangeWithStep(ConstRefType min, ConstRefType max, ConstRefType step) : Range<T>(min, max), _step(step) {}
 
     ConstRefType step() const { return _step; }
-    size_t n_bins() const { return (this->max() - this->min()) / step(); }
+    T grid_point_value(size_t index) const { return this->min() + index * step(); }
+    size_t n_grid_points() const
+    {
+        size_t n_points = (this->max() - this->min()) / step();
+        if(this->Contains(grid_point_value(n_points)))
+            ++n_points;
+        return n_points;
+    }
+
+    iterator begin() const { return iterator(*this, 0); }
+    iterator end() const { return iterator(*this, n_grid_points()); }
 
     std::string ToString(char sep = ' ') const
     {

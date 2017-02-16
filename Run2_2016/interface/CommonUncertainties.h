@@ -8,7 +8,7 @@ This file is part of https://github.com/cms-hh/StatAnalysis. */
 #define UNC(name, cor_range, distr_type, ...) \
     static const GlobalUncertainty& name() { \
         static const GlobalUncertainty u(#name, CorrelationRange::cor_range, \
-        UncDistributionType::distr_type, ##__VA_ARGS__); \
+                                         UncDistributionType::distr_type, ##__VA_ARGS__); \
         return u; \
     }
 
@@ -22,6 +22,9 @@ struct CommonUncertainties {
     UNC(lumi, LHC, lnN, 1.058)
     UNC(cr_DiBoson, LHC, lnN, 1.1)
     UNC(cr_TTbar, LHC, lnN, 1.05)
+    UNC(cr_SM_HH, LHC, lnN, 1.08)
+    UNC(br_SM_H_bb, LHC, lnN, 1.0065)
+    UNC(br_SM_H_tautau, LHC, lnN, 1.0117)
 
     // CMS uncertainties
     UNC(scale_j, Experiment, lnN)

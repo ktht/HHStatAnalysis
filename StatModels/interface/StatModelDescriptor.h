@@ -11,10 +11,12 @@ This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 namespace hh_analysis {
 using namespace analysis;
 
-enum class LimitType { ModelIndependent, MSSM };
+enum class LimitType { ModelIndependent, SM, MSSM, NonResonant_BSM};
 ENUM_NAMES(LimitType) = {
     { LimitType::ModelIndependent, "model_independent" },
-    { LimitType::MSSM, "MSSM" }
+    { LimitType::SM, "SM" },
+    { LimitType::MSSM, "MSSM" },
+    { LimitType::NonResonant_BSM, "NonResonant_BSM" }
 };
 
 struct StatModelDescriptor {
