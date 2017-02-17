@@ -28,6 +28,7 @@ struct CommonUncertainties {
 
     // CMS uncertainties
     UNC(scale_j, Experiment, lnN)
+    UNC(res_j, Experiment, shape)
     UNC(scale_b, Experiment, lnN, 1.02)
     UNC(eff_btag, Experiment, lnN)
     UNC(eff_e, Experiment, lnN)

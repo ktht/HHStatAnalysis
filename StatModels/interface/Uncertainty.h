@@ -18,9 +18,10 @@ inline bool operator<=(CorrelationRange a, CorrelationRange b)
     return static_cast<int>(a) <= static_cast<int>(b);
 }
 
-enum class UncDistributionType { lnN, shape };
+enum class UncDistributionType { lnN, lnU, shape };
 ENUM_NAMES(UncDistributionType) = {
     { UncDistributionType::lnN, "lnN" },
+    { UncDistributionType::lnU, "lnU" },
     { UncDistributionType::shape, "shape" }
 };
 
@@ -29,6 +30,7 @@ struct Uncertainty {
     CorrelationRange correlation_range = CorrelationRange::Experiment;
     UncDistributionType distr_type = UncDistributionType::lnN;
     std::vector<std::string> analysis_names, channel_names, category_names;
+    bool use_era;
 
     Uncertainty() {}
     Uncertainty(const std::string& _name, CorrelationRange _correlation_range, UncDistributionType _distr_type,
@@ -36,7 +38,7 @@ struct Uncertainty {
                 const std::vector<std::string>& _channel_names = {},
                 const std::vector<std::string>& _category_names = {}) :
         name(_name), correlation_range(_correlation_range), distr_type(_distr_type), analysis_names(_analysis_names),
-        channel_names(_channel_names), category_names(_category_names)
+        channel_names(_channel_names), category_names(_category_names), use_era(true)
     {}
 
     virtual ~Uncertainty() {}
@@ -90,6 +92,13 @@ struct Uncertainty {
         return u;
     }
 
+    Uncertainty UseEra(bool use_era) const
+    {
+        Uncertainty u(*this);
+        u.use_era = use_era;
+        return u;
+    }
+
     std::string FullName() const
     {
         static const std::string exp_name = "CMS";
@@ -101,16 +110,32 @@ struct Uncertainty {
         std::ostringstream ss;
         if(correlation_range <= CorrelationRange::Experiment)
             ss << exp_name << sep;
-        if(distr_type == UncDistributionType::shape)
-            ss << distr_type << sep;
-        ss << name << sep;
+//        if(distr_type == UncDistributionType::shape)
+//            ss << distr_type << sep;
+        if(name.size())
+            ss << name << sep;
         if(correlation_range <= CorrelationRange::Analysis)
             ss << analysis << sep;
         if(correlation_range == CorrelationRange::Channel)
             ss << channel << sep;
         if(correlation_range <= CorrelationRange::Category)
             ss << category << sep;
-        ss << era;
+        if(use_era)
+            ss << era;
+        else if(ss.cur > 0)
+            ss.seekp(-1, ss.cur);
+
+        std::string full_name = ss.str();
+        if(!use_era)
+            full_name.erase(full_name.size() - 1);
+        return full_name;
+    }
+
+    std::string FullNameBinByBin(const std::string& process, size_t bin) const
+    {
+        static const std::string sep = "_";
+        std::ostringstream ss;
+        ss << FullName() << sep << process << sep << "bin" << sep << bin;
         return ss.str();
     }
 
@@ -149,6 +174,21 @@ struct Uncertainty {
                const std::vector<std::string>& processes_2 = {}, const std::vector<std::string>& processes_3 = {}) const
     {
         Apply(cb, 1.0, processes, processes_2, processes_3);
+    }
+
+    void ApplyBinByBin(ch::CombineHarvester& cb, const std::string& process, size_t bin_id)
+    {
+        const auto syst_map = ch::syst::SystMap<>::init(1.0);
+        auto cb_copy = cb.cp().process({process});
+        if(analysis_names.size())
+            cb_copy = cb_copy.analysis(analysis_names);
+        if(channel_names.size())
+            cb_copy = cb_copy.channel(channel_names);
+        if(category_names.size())
+            cb_copy = cb_copy.bin(category_names);
+        std::ostringstream ss_distr;
+        ss_distr << distr_type;
+        cb_copy.AddSyst(cb, FullNameBinByBin(process, bin_id), ss_distr.str(), syst_map);
     }
 };
 
