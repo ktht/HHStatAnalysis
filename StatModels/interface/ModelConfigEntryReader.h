@@ -34,6 +34,8 @@ public:
         CheckReadParamCounts("blind", 1, Condition::less_equal);
         CheckReadParamCounts("morph", 1, Condition::less_equal);
         CheckReadParamCounts("combine_channels", 1, Condition::less_equal);
+        CheckReadParamCounts("per_channel_limits", 1, Condition::less_equal);
+        CheckReadParamCounts("per_category_limits", 1, Condition::less_equal);
         CheckReadParamCounts("grid_x", 1, Condition::less_equal);
         CheckReadParamCounts("grid_y", 1, Condition::less_equal);
 
@@ -56,6 +58,7 @@ public:
         ParseEntry("morph", current.morph);
         ParseEntry("combine_channels", current.combine_channels);
         ParseEntry("per_channel_limits", current.per_channel_limits);
+        ParseEntry("per_category_limits", current.per_category_limits);
         ParseEntry("grid_x", current.grid_x);
         ParseEntry("grid_y", current.grid_y);
         ParseEntry("custom_param", current.custom_params);

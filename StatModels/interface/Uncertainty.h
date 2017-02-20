@@ -6,6 +6,7 @@ This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 #include "CombineHarvester/CombineTools/interface/CombineHarvester.h"
 #include "CombineHarvester/CombineTools/interface/Systematics.h"
 #include "HHStatAnalysis/Core/interface/EnumNameMap.h"
+#include "HHStatAnalysis/Core/interface/Tools.h"
 
 namespace hh_analysis {
 
@@ -23,6 +24,12 @@ ENUM_NAMES(UncDistributionType) = {
     { UncDistributionType::lnN, "lnN" },
     { UncDistributionType::lnU, "lnU" },
     { UncDistributionType::shape, "shape" }
+};
+
+enum class UncVariation { Up, Down };
+ENUM_NAMES(UncVariation) = {
+    { UncVariation::Up, "Up" },
+    { UncVariation::Down, "Down" },
 };
 
 struct Uncertainty {
@@ -146,12 +153,15 @@ struct Uncertainty {
         return FullName() < other.FullName();
     }
 
-    template<typename ...T>
-    void Apply(ch::CombineHarvester& cb, const ch::syst::SystMap<T...>& syst_map,
-               const std::vector<std::string>& processes, const std::vector<std::string>& processes_2 = {},
-               const std::vector<std::string>& processes_3 = {}) const
+    double ConvertToDatacardUncValue(double value) const
     {
-        const auto all_processes = ch::JoinStr({processes, processes_2, processes_3});
+        return distr_type == UncDistributionType::lnN ? 1 + value : value;
+    }
+
+    template<typename SystMap>
+    void ApplyMap(ch::CombineHarvester& cb, const SystMap& syst_map,
+               const std::vector<std::string>& all_processes) const
+    {
         auto cb_copy = cb.cp().process(all_processes);
         if(analysis_names.size())
             cb_copy = cb_copy.analysis(analysis_names);
@@ -164,16 +174,32 @@ struct Uncertainty {
         cb_copy.AddSyst(cb, FullName(), ss_distr.str(), syst_map);
     }
 
-    void Apply(ch::CombineHarvester& cb, double value, const std::vector<std::string>& processes,
-               const std::vector<std::string>& processes_2 = {}, const std::vector<std::string>& processes_3 = {}) const
+    template<typename SystMap, typename ...Processes>
+    void ApplyMap(ch::CombineHarvester& cb, const SystMap& syst_map, const Processes& ...processes) const
     {
-        Apply(cb, ch::syst::SystMap<>::init(value), processes, processes_2, processes_3);
+        std::vector<std::string> all_processes;
+        analysis::tools::put_back(all_processes, processes...);
+        ApplyMap(cb, syst_map, all_processes);
     }
 
-    void Apply(ch::CombineHarvester& cb, const std::vector<std::string>& processes,
-               const std::vector<std::string>& processes_2 = {}, const std::vector<std::string>& processes_3 = {}) const
+    template<typename ...Processes>
+    void Apply(ch::CombineHarvester& cb, double value, const Processes& ...processes) const
     {
-        Apply(cb, 1.0, processes, processes_2, processes_3);
+        ApplyMap(cb, ch::syst::SystMap<>::init(ConvertToDatacardUncValue(value)), processes...);
+    }
+
+    template<typename ...Processes>
+    void Apply(ch::CombineHarvester& cb, std::pair<double, double> up_down_values, const Processes& ...processes) const
+    {
+        const auto up_down = std::make_pair(ConvertToDatacardUncValue(up_down_values.first),
+                                            ConvertToDatacardUncValue(up_down_values.second));
+        ApplyMap(cb, ch::syst::SystMapAsymm<>::init(up_down.first, up_down.second), processes...);
+    }
+
+    template<typename ...Processes>
+    void Apply(ch::CombineHarvester& cb, const Processes& ...processes) const
+    {
+        Apply(cb, 1.0, processes...);
     }
 
     void ApplyBinByBin(ch::CombineHarvester& cb, const std::string& process, size_t bin_id)
@@ -193,20 +219,27 @@ struct Uncertainty {
 };
 
 struct GlobalUncertainty : Uncertainty {
-    double value;
+    static constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
+    double up_value, down_value;
 
     GlobalUncertainty(const std::string& _name, CorrelationRange _correlation_range, UncDistributionType _distr_type,
-                      double _value = std::numeric_limits<double>::quiet_NaN())
-        : Uncertainty(_name, _correlation_range, _distr_type), value(_value) {}
+                      double _up_value = NaN, double _down_value = NaN)
+        : Uncertainty(_name, _correlation_range, _distr_type), up_value(_up_value), down_value(_down_value) {}
 
-    void ApplyGlobal(ch::CombineHarvester& cb, const std::vector<std::string>& processes,
-                     const std::vector<std::string>& processes_2 = {},
-                     const std::vector<std::string>& processes_3 = {}) const
+    template<typename ...Processes>
+    void ApplyGlobal(ch::CombineHarvester& cb, const Processes& ...processes) const
     {
-        if(std::isnan(value))
+        if(distr_type == UncDistributionType::shape)
+            Apply(cb, processes...);
+        else if(std::isnan(up_value))
             throw analysis::exception("Global value for uncertainty '%1%' is not defined.") % FullName();
-        Apply(cb, value, processes, processes_2, processes_3);
+        else if(IsAsymmetric())
+            Apply(cb, std::make_pair(up_value, down_value), processes...);
+        else
+            Apply(cb, up_value, processes...);
     }
+
+    bool IsAsymmetric() const { return ! std::isnan(down_value); }
 };
 
 } // namespace hh_analysis

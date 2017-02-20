@@ -16,29 +16,7 @@ namespace hh_analysis {
 namespace stat_models {
 namespace Run2_2016 {
 
-std::pair<std::string, std::string> ttbb_resonant::ShapeNameRule(bool use_mass) const
-{
-    std::pair<std::string, std::string> result;
-    std::ostringstream ss;
-    ss << "$BIN/$PROCESS";
-    if(use_mass)
-        ss << "_" << desc.signal_point_prefix << "$MASS";
-    result.first = ss.str();
-    ss << "_$SYSTEMATIC";
-    result.second = ss.str();
-    return result;
-}
-
-void ttbb_resonant::ExtractShapes(ch::CombineHarvester& combine_harvester, const std::string& shapes_file,
-                                      bool is_signal) const
-{
-    const auto& processes = is_signal ? signal_processes : bkg_all_processes;
-    const auto& shape_name_rules = ShapeNameRule(is_signal);
-    combine_harvester.cp().process(processes).ExtractShapes(shapes_file, shape_name_rules.first,
-                                                            shape_name_rules.second);
-}
-
-void ttbb_resonant::CreateDatacards(const std::string& shapes_file, const std::string& output_path)
+void ttbb_resonant::CreateDatacards(const std::string& output_path)
 {
     ch::CombineHarvester harvester;
 
@@ -46,12 +24,12 @@ void ttbb_resonant::CreateDatacards(const std::string& shapes_file, const std::s
         const auto& ch_categories = GetChannelCategories(channel);
         harvester.AddObservations(wildcard, ana_name, eras, {channel}, ch_categories);
         harvester.AddProcesses(desc.signal_points, ana_name, eras, {channel}, signal_processes, ch_categories, true);
-        harvester.AddProcesses(wildcard, ana_name, eras, {channel}, bkg_all_processes, ch_categories, false);
+        harvester.AddProcesses(wildcard, ana_name, eras, {channel}, bkg_all, ch_categories, false);
     }
 
     AddSystematics(harvester);
-    ExtractShapes(harvester, shapes_file, false);
-    ExtractShapes(harvester, shapes_file, true);
+    ExtractShapes(harvester);
+
     if(desc.model_signal_process.size())
         RenameProcess(harvester, desc.signal_process, desc.model_signal_process);
 
@@ -81,6 +59,11 @@ void ttbb_resonant::CreateDatacards(const std::string& shapes_file, const std::s
     if(desc.per_channel_limits) {
         for(const auto& chn : desc.channels)
             writer.WriteCards(chn, harvester.cp().channel({chn}));
+    }
+    if(desc.per_category_limits) {
+        for(size_t n = 0; n < desc.categories.size(); ++n) {
+            writer.WriteCards(desc.categories.at(n), harvester.cp().bin_id({int(n)}));
+        }
     }
 }
 

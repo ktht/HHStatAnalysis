@@ -4,6 +4,7 @@
 
 import os
 import re
+import sys
 import argparse
 import glob
 from ROOT import TFile
@@ -58,17 +59,18 @@ class CorrelationRange:
     Category, Channel, Analysis, Experiment, LHC = range(5)
 
 class UncDesc:
-    def __init__(self, name, correlation_range, LLR_name):
+    def __init__(self, name, correlation_range, LLR_name, scale_upper_case = True):
         self.name = name
         self.correlation_range = correlation_range
         self.LLR_name = LLR_name
         self.shape_variable = None
+        self.scale_upper_case = scale_upper_case
 
     def GetHistName(self, sample, channel, category, scale_variation):
         hist_name = '{}'.format(sample)
         if self.correlation_range <= CorrelationRange.Experiment:
             hist_name += '_CMS'
-        hist_name += '_shape_{}'.format(self.name)
+        hist_name += '_{}'.format(self.name)
         if self.correlation_range <= CorrelationRange.Analysis:
             hist_name += '_hh_ttbb'
         if self.correlation_range <= CorrelationRange.Channel:
@@ -81,11 +83,14 @@ class UncDesc:
     def GetLLRHistName(self, sample, channel, category, region, scale_variation):
         variable = None
         LLR_unc = None
+        scale_var_name = str(scale_variation)
+        if not self.scale_upper_case:
+            scale_var_name = scale_variation.lower()
         if self.shape_variable == None:
             variable = shape_variable
-            LLR_unc = '{}{}'.format(self.LLR_name, scale_variation)
+            LLR_unc = '{}{}'.format(self.LLR_name, scale_var_name)
         else:
-            variable = '{}{}'.format(self.shape_variable, scale_variation)
+            variable = '{}{}'.format(self.shape_variable, scale_var_name)
         return GetLLRHistName(sample, category, region, variable, LLR_unc)
 
 class BinDesc:
@@ -102,9 +107,9 @@ class BinDesc:
             for point in points_desc[2]:
                 hist_name = points_desc[0](sample_name, point)
                 self.hist_names[hist_name] = []
-                for sample_name in LLR_sample_names:
-                    LLR_sample_name = points_desc[1](sample_name, point)
-                    self.hist_names[hist_name].append(LLR_sample_name)
+                for LLR_sample_name in LLR_sample_names:
+                    LLR_hist_name = points_desc[1](LLR_sample_name, point)
+                    self.hist_names[hist_name].append(LLR_hist_name)
 
 class Hist:
     def __init__(self, name):
@@ -122,39 +127,40 @@ class Hist:
             raise RuntimeError('Can not create histogram {} for {}.'.format(self.name, dir.GetName()))
         dir.WriteTObject(self.root_hist, self.name, 'Overwrite')
 
-tauES_unc = UncDesc('scale_tau', CorrelationRange.Experiment, '')
-topPt_unc = UncDesc('topPt', CorrelationRange.Experiment, 'pttopreweight')
-qcd_btag_relax_unc = UncDesc('qcd_btag_relax', CorrelationRange.Category, 'qcd_RlxToTight')
+tauES_unc = UncDesc('scale_t', CorrelationRange.Experiment, 'tau', False)
+jetES_unc = UncDesc('scale_j', CorrelationRange.Experiment, 'jet', False)
+topPt_unc = UncDesc('topPt', CorrelationRange.Experiment, 'top', True)
 
 bins = [
     BinDesc('data_obs', [ 'data_obs' ], save_all_regions = True),
-    BinDesc('TT', [ 'TT' ], unc_list = [ tauES_unc, topPt_unc ], save_all_regions = True),
-    BinDesc('DY_0b', [ 'DY0b' ], unc_list = [ tauES_unc ], save_all_regions = True),
-    BinDesc('DY_1b', [ 'DY1b' ], unc_list = [ tauES_unc ], save_all_regions = True),
-    BinDesc('DY_2b', [ 'DY2b' ], unc_list = [ tauES_unc ], save_all_regions = True),
-    BinDesc('QCD', [ 'QCD' ], unc_list = [ qcd_btag_relax_unc ], save_all_regions = False),
-    BinDesc('W', [ 'WJets' ], unc_list = [ tauES_unc ], save_all_regions = True),
-    BinDesc('tW', [ 'TWtop', 'TWantitop' ], unc_list = [ tauES_unc ], save_all_regions = True),
-    BinDesc('VV', [ 'WWToLNuQQ', 'WZTo1L1Nu2Q', 'WZTo1L3Nu', 'WZTo2L2Q', 'ZZTo2L2Q' ], unc_list = [ tauES_unc ],
-            save_all_regions = True)
+    BinDesc('TT', [ 'TT' ], unc_list = [ tauES_unc, jetES_unc, topPt_unc ], save_all_regions = True),
+    BinDesc('DY_0b', [ 'DY0b' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('DY_1b', [ 'DY1b' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('DY_2b', [ 'DY2b' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('QCD', [ 'QCD' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = False),
+    BinDesc('W', [ 'WJets' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('tW', [ 'TW' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('WW', [ 'WW' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('WZ', [ 'WZ' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('ZZ', [ 'ZZ' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('ZH', [ 'ZH' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
+    BinDesc('EWK', [ 'EWKW', 'EWKZ2Jets_ZToLL' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True)
 ]
 
 if args.analysis == 'res_lm' or args.analysis == 'res_hm':
     shape_variable = 'HHKin_mass_raw'
-    masses = [ 250, 260, 270, 280, 300, 320, 340, 350, 400, 500, 550, 650, 700, 750, 800, 900 ]
+    masses = [ 250, 270, 280, 300, 350, 400, 500, 550, 650, 750, 900 ]
     out_name_source = lambda bin_name, point: '{}_M{}'.format(bin_name, point)
     LLR_name_source = lambda sample, point: '{}{}'.format(sample, point)
     bins.append(BinDesc('ggRadion_hh_ttbb', [ 'Radion' ], points_desc = [ out_name_source, LLR_name_source, masses ],
-                        unc_list = [ tauES_unc ]))
-    tauES_unc.shape_variable = 'HHKinFitTau'
+                        unc_list = [ tauES_unc, jetES_unc ]))
 elif args.analysis == 'nonres':
     shape_variable = 'MT2'
     k_lambda = range(-20, 32)
-    out_name_source = lambda bin_name, point: '{}_kl_{}'.format(bin_name, NumToName(point))
+    out_name_source = lambda bin_name, point: '{}_kl{}'.format(bin_name, NumToName(point))
     LLR_name_source = lambda sample, point: '{}{}'.format(sample, point + 20)
     bins.append(BinDesc('ggh_hh_ttbb', [ 'lambdarew' ], points_desc = [ out_name_source, LLR_name_source, k_lambda ],
-                        unc_list = [ tauES_unc ]))
-    tauES_unc.shape_variable = 'MT2Tau'
+                        unc_list = [ tauES_unc, jetES_unc ]))
 else:
     raise RuntimeError("Unsupported analysis '{}'".format(args.analysis))
 
