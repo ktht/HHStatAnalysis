@@ -11,65 +11,15 @@ This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 #include "HHStatAnalysis/Core/interface/TextIO.h"
 #include "HHStatAnalysis/Core/interface/RootExt.h"
 #include "HHStatAnalysis/Run2_2016/interface/CommonUncertainties.h"
+#include "HHStatAnalysis/StatModels/interface/PhysicalConstants.h"
 
 namespace hh_analysis {
 namespace stat_models {
 namespace Run2_2016 {
 
-std::string ttbb_nonresonant::NumToName(double x)
+void ttbb_nonresonant::CreateDatacards(const std::string& output_path)
 {
-    std::ostringstream ss;
-    ss << x;
-    std::string str = ss.str();
-    std::replace(str.begin(), str.end(), '-', 'm');
-    std::replace(str.begin(), str.end(), '.', 'p');
-    return str;
-}
-
-ttbb_nonresonant::ShapeNameRule ttbb_nonresonant::BackgroundShapeNameRule() const
-{
-    std::pair<std::string, std::string> result;
-    std::ostringstream ss;
-    ss << "$BIN/$PROCESS";
-    result.first = ss.str();
-    ss << "_$SYSTEMATIC";
-    result.second = ss.str();
-    return result;
-}
-
-ttbb_nonresonant::ShapeNameRule ttbb_nonresonant::SignalShapeNameRule(double point_value) const
-{
-    std::pair<std::string, std::string> result;
-    std::ostringstream ss;
-    ss << "$BIN/$PROCESS_" << desc.signal_point_prefix << "_" << NumToName(point_value);
-    result.first = ss.str();
-    ss << "_$SYSTEMATIC";
-    result.second = ss.str();
-    return result;
-}
-
-void ttbb_nonresonant::ExtractShapes(ch::CombineHarvester& ch, const std::string& shapes_file,
-                                      bool is_signal) const
-{
-    if(is_signal) {
-        for(double x : desc.grid_x) {
-            const auto& shape_name_rules = SignalShapeNameRule(x);
-            ch.cp().process(signal_processes).mass({ToString(x)})
-              .ExtractShapes(shapes_file, shape_name_rules.first, shape_name_rules.second);
-        }
-    } else {
-        const auto& shape_name_rules = BackgroundShapeNameRule();
-        ch.cp().process(bkg_all_processes).ExtractShapes(shapes_file, shape_name_rules.first, shape_name_rules.second);
-    }
-}
-
-void ttbb_nonresonant::CreateDatacards(const std::string& shapes_file, const std::string& output_path)
-{
-    static constexpr double br_H_tautau = 6.256e-02;
-    static constexpr double br_H_bb = 5.809e-01;
-    static constexpr double br_HH_bbtautau = 2 * br_H_tautau * br_H_bb;
-    static constexpr double cr_HH = 33.41e-03;
-    static constexpr double sf = cr_HH * br_HH_bbtautau;
+    static constexpr double sf = phys_const::XS_HH_13TeV * phys_const::BR_HH_bbtautau;
 
     ch::CombineHarvester harvester;
 
@@ -81,12 +31,11 @@ void ttbb_nonresonant::CreateDatacards(const std::string& shapes_file, const std
         const auto& ch_categories = GetChannelCategories(channel);
         harvester.AddObservations(wildcard, ana_name, eras, {channel}, ch_categories);
         harvester.AddProcesses(desc.signal_points, ana_name, eras, {channel}, signal_processes, ch_categories, true);
-        harvester.AddProcesses(wildcard, ana_name, eras, {channel}, bkg_all_processes, ch_categories, false);
+        harvester.AddProcesses(wildcard, ana_name, eras, {channel}, bkg_all, ch_categories, false);
     }
 
     AddSystematics(harvester);
-    ExtractShapes(harvester, shapes_file, false);
-    ExtractShapes(harvester, shapes_file, true);
+    ExtractShapes(harvester);
 
     if(desc.limit_type == LimitType::SM) {
         harvester.cp().process(signal_processes).ForEachProc([](ch::Process *p) {
@@ -113,6 +62,11 @@ void ttbb_nonresonant::CreateDatacards(const std::string& shapes_file, const std
         for(const auto& chn : desc.channels)
             writer.WriteCards(chn, harvester.cp().channel({chn}));
     }
+    if(desc.per_category_limits) {
+        for(size_t n = 0; n < desc.categories.size(); ++n) {
+            writer.WriteCards(desc.categories.at(n), harvester.cp().bin_id({int(n)}));
+        }
+    }
 }
 
 void ttbb_nonresonant::AddSystematics(ch::CombineHarvester& cb)
@@ -121,9 +75,10 @@ void ttbb_nonresonant::AddSystematics(ch::CombineHarvester& cb)
     ttbb_base::AddSystematics(cb);
     if(desc.limit_type != LimitType::SM) return;
 
-    CU::cr_SM_HH().ApplyGlobal(cb, signal_processes);
-    CU::br_SM_H_tautau().ApplyGlobal(cb, signal_processes);
-    CU::br_SM_H_bb().ApplyGlobal(cb, signal_processes);
+    CU::QCDscale_ggHH().ApplyGlobal(cb, signal_processes);
+    CU::pdf_ggHH().ApplyGlobal(cb, signal_processes);
+    CU::BR_SM_H_bb().ApplyGlobal(cb, signal_processes);
+    CU::BR_SM_H_tautau().ApplyGlobal(cb, signal_processes);
 }
 
 } // namespace Run2_2016

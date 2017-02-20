@@ -21,6 +21,8 @@ parser.add_argument('--parallel', required=False, dest='n_parallel', type=int, d
                     help="number of parallel jobs")
 parser.add_argument('--plotOnly', action="store_true", help="Run only plots.")
 parser.add_argument('--collectAndPlot', action="store_true", help="Run only plots.")
+parser.add_argument('--impacts', action="store_true",
+                    help="Compute impact of each nuissance parameter to the final result.")
 parser.add_argument('shapes_file', type=str, nargs='+', help="file with input shapes")
 
 args = parser.parse_args()
@@ -65,6 +67,27 @@ if limit_type in Set(['model_independent', 'SM', 'NonResonant_BSM']):
     if collect_limits:
         sh_call('combineTool.py -M CollectLimits */*/*.limit.* --use-dirs -o {}'.format(limit_json_file),
                 "error while collecting limits")
+
+    if args.impacts:
+        channels = filter(lambda f: os.path.isdir(f), os.listdir('.'))
+        for channel in channels:
+            points = filter(lambda f: os.path.isdir('{}/{}'.format(channel, f)), os.listdir(channel))
+            for point in points:
+                ch_dir('{}/{}'.format(channel, point))
+                impacts_work_path = 'impacts'
+                if not os.path.exists(impacts_work_path):
+                    os.makedirs(impacts_work_path)
+                ch_dir(impacts_work_path)
+                impact_cmd = 'combineTool.py -M Impacts -m {} -d ../workspace.root -t -1 --expectSignal 1' \
+                             ' --parallel {}'.format(point, args.n_parallel)
+                sh_call(impact_cmd + ' --doInitialFit', "error while doing initial fit for impacts")
+                sh_call(impact_cmd + ' --robustFit 1 --doFits', "error while doing robust fit for impacts")
+                sh_call('combineTool.py -M Impacts -m {} -d ../workspace.root -o impacts.json'.format(point),
+                        "error while collecting impacts")
+                impacts_out = '../../../impacts_{}_{}'.format(channel, point)
+                sh_call('plotImpacts.py -i impacts.json -o {}'.format(impacts_out),
+                        "error while plotting impacts")
+                ch_dir('../../..')
 
     limits_to_show = "exp"
     if not model_desc.blind:

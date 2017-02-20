@@ -30,7 +30,7 @@ struct StatModelDescriptor {
 
     LimitType limit_type;
     std::string th_model_file;
-    bool blind, morph, combine_channels, per_channel_limits;
+    bool blind, morph, combine_channels, per_channel_limits, per_category_limits;
     RangeWithStep<double> grid_x, grid_y;
 
 
@@ -50,7 +50,7 @@ struct StatModelDescriptor {
 
     StatModelDescriptor() :
         limit_type(LimitType::ModelIndependent), blind(true), morph(false), combine_channels(true),
-        per_channel_limits(false) {}
+        per_channel_limits(false), per_category_limits(false) {}
 };
 
 using ModelDescriptorCollection = std::unordered_map<std::string, StatModelDescriptor>;

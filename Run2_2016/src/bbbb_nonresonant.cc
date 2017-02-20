@@ -11,6 +11,7 @@ This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 #include "HHStatAnalysis/Core/interface/TextIO.h"
 #include "HHStatAnalysis/Core/interface/RootExt.h"
 #include "HHStatAnalysis/Run2_2016/interface/CommonUncertainties.h"
+#include "HHStatAnalysis/StatModels/interface/PhysicalConstants.h"
 
 namespace hh_analysis {
 namespace stat_models {
@@ -20,76 +21,14 @@ const StatModel::v_str bbbb_nonresonant::ana_name = { "HHbbbb" };
 const StatModel::v_str bbbb_nonresonant::eras = { "13TeV" };
 const StatModel::v_str bbbb_nonresonant::bkg_processes = { "bkg_hem_mix" };
 
-bbbb_nonresonant::bbbb_nonresonant(const StatModelDescriptor& _desc) :
-    StatModel(_desc), signal_processes({ desc.signal_process })
+bbbb_nonresonant::bbbb_nonresonant(const StatModelDescriptor& _desc, const std::string& input_file_name) :
+    StatModel(_desc, input_file_name), signal_processes({ desc.signal_process })
 {
 }
 
-std::string bbbb_nonresonant::NumToName(double x)
+void bbbb_nonresonant::CreateDatacards(const std::string& output_path)
 {
-    std::ostringstream ss;
-    ss << x;
-    std::string str = ss.str();
-    std::replace(str.begin(), str.end(), '-', 'm');
-    std::replace(str.begin(), str.end(), '.', 'p');
-    return str;
-}
-
-bbbb_nonresonant::ShapeNameRule bbbb_nonresonant::BackgroundShapeNameRule() const
-{
-    std::pair<std::string, std::string> result;
-    std::ostringstream ss;
-    ss << "$PROCESS";
-    result.first = ss.str();
-    ss << "_$SYSTEMATIC";
-    result.second = ss.str();
-    return result;
-}
-
-bbbb_nonresonant::ShapeNameRule bbbb_nonresonant::SignalShapeNameRule(double /*point_value*/) const
-{
-    std::pair<std::string, std::string> result;
-    std::ostringstream ss;
-//    ss << "$BIN/$PROCESS_" << desc.signal_point_prefix << "_" << NumToName(point_value);
-    ss << "$PROCESS";
-    result.first = ss.str();
-    ss << "_$SYSTEMATIC";
-    result.second = ss.str();
-    return result;
-}
-
-void bbbb_nonresonant::ExtractShapes(ch::CombineHarvester& ch, const std::string& shapes_file, bool is_signal) const
-{
-    if(is_signal) {
-        for(double x : desc.grid_x) {
-            const auto& shape_name_rules = SignalShapeNameRule(x);
-            ch.cp().process(signal_processes).mass({ToString(x)})
-              .ExtractShapes(shapes_file, shape_name_rules.first, shape_name_rules.second);
-        }
-    } else {
-        const auto& shape_name_rules = BackgroundShapeNameRule();
-        ch.cp().process(bkg_processes).ExtractShapes(shapes_file, shape_name_rules.first, shape_name_rules.second);
-    }
-}
-
-ch::Categories bbbb_nonresonant::GetChannelCategories(const std::string& channel)
-{
-    ch::Categories ch_categories;
-    for(size_t n = 0; n < desc.categories.size(); ++n) {
-        const std::string cat_name = desc.categories.at(n);
-        const std::string name = boost::str(boost::format("%1%_%2%") % channel % cat_name);
-        ch_categories.push_back({n, name});
-    }
-    return ch_categories;
-}
-
-void bbbb_nonresonant::CreateDatacards(const std::string& shapes_file, const std::string& output_path)
-{
-    static constexpr double br_H_bb = 5.809e-01;
-    static constexpr double br_HH_bbbb = 2 * br_H_bb * br_H_bb;
-    static constexpr double cr_HH = 33.41e-03;
-    static constexpr double fb_to_pb = 1e3;
-    static constexpr double sf = cr_HH * br_HH_bbbb * fb_to_pb;
+    static constexpr double sf = phys_const::XS_HH_13TeV * phys_const::BR_HH_bbbb / phys_const::fb;
 
     ch::CombineHarvester harvester;
 
@@ -105,8 +44,7 @@ void bbbb_nonresonant::CreateDatacards(const std::string& shapes_file, const std
     }
 
     AddSystematics(harvester);
-    ExtractShapes(harvester, shapes_file, false);
-    ExtractShapes(harvester, shapes_file, true);
+    ExtractShapes(harvester);
 
     if(desc.limit_type == LimitType::SM) {
         harvester.cp().process(signal_processes).ForEachProc([](ch::Process *p) {
@@ -166,9 +104,9 @@ void bbbb_nonresonant::AddSystematics(ch::CombineHarvester& cb)
     }
 
     if(desc.limit_type != LimitType::SM) return;
-    CU::cr_SM_HH().ApplyGlobal(cb, signal_processes);
-    const double br_SM_H_bb_unc = 1. + 2. * (CU::br_SM_H_bb().value - 1.);
-    CU::br_SM_H_bb().Apply(cb, br_SM_H_bb_unc, signal_processes);
+    CU::QCDscale_ggHH().ApplyGlobal(cb, signal_processes);
+    CU::pdf_ggHH().ApplyGlobal(cb, signal_processes);
+    CU::BR_SM_H_bb().Apply(cb, 2 * CU::BR_SM_H_bb().up_value, signal_processes);
 }
 
 } // namespace Run2_2016

@@ -2,6 +2,7 @@
 This file is part of https://github.com/cms-hh/HHStatAnalysis. */
 
 #include <iostream>
+#include <Math/SMatrix.h>
 #include "CombineHarvester/CombineTools/interface/Systematics.h"
 #include "CombineHarvester/CombineTools/interface/CardWriter.h"
 #include "CombineHarvester/CombinePdfs/interface/MorphFunctions.h"
@@ -18,65 +19,93 @@ namespace Run2_2016 {
 
 const StatModel::v_str ttbb_base::ana_name = { "hh_ttbb" };
 const StatModel::v_str ttbb_base::eras = { "13TeV" };
-const StatModel::v_str ttbb_base::bkg_mc_processes = { "DY_0b", "DY_1b", "DY_2b", "TT", "tW", "VV", "W" };
-const StatModel::v_str ttbb_base::bkg_data_driven_processes = { "QCD" };
-const StatModel::v_str ttbb_base::bkg_all_processes = ch::JoinStr({ bkg_mc_processes, bkg_data_driven_processes });
+const std::string ttbb_base::bkg_TT = "TT";
+const std::string ttbb_base::bkg_tW = "tW";
+const std::string ttbb_base::bkg_W = "W";
+const std::string ttbb_base::bkg_EWK = "EWK";
+const std::string ttbb_base::bkg_ZH = "ZH";
+const std::string ttbb_base::bkg_QCD = "QCD";
+const std::string ttbb_base::bkg_DY_0b = "DY_0b";
+const std::string ttbb_base::bkg_DY_1b = "DY_1b";
+const std::string ttbb_base::bkg_DY_2b = "DY_2b";
+const StatModel::v_str ttbb_base::bkg_DY = { bkg_DY_0b, bkg_DY_1b, bkg_DY_2b };
+const StatModel::v_str ttbb_base::bkg_VV = { "WW", "WZ", "ZZ" };
+const StatModel::v_str ttbb_base::bkg_pure_MC = analysis::tools::join(bkg_tW, bkg_VV, bkg_W, bkg_EWK, bkg_ZH);
+const StatModel::v_str ttbb_base::bkg_MC = analysis::tools::join(bkg_pure_MC, bkg_DY, bkg_TT);
+const StatModel::v_str ttbb_base::bkg_all = analysis::tools::join(bkg_MC, bkg_QCD);
 
-ttbb_base::ttbb_base(const StatModelDescriptor& _desc) :
-    StatModel(_desc), signal_processes({ desc.signal_process }),
-    all_mc_processes(ch::JoinStr({ signal_processes, bkg_mc_processes }))
+ttbb_base::ttbb_base(const StatModelDescriptor& _desc, const std::string& input_file_name) :
+    StatModel(_desc, input_file_name), signal_processes({ desc.signal_process }),
+    all_mc_processes(ch::JoinStr({ signal_processes, bkg_MC })),
+    all_processes(ch::JoinStr({ signal_processes, bkg_all }))
 {
-}
-
-ch::Categories ttbb_base::GetChannelCategories(const std::string& channel)
-{
-    ch::Categories ch_categories;
-    for(size_t n = 0; n < desc.categories.size(); ++n) {
-        const std::string cat_name = desc.categories.at(n);
-        const std::string name = boost::str(boost::format("%1%_%2%") % channel % cat_name);
-        ch_categories.push_back({n, name});
-    }
-    return ch_categories;
 }
 
 void ttbb_base::AddSystematics(ch::CombineHarvester& cb)
 {
     using ch::syst::SystMap;
     using CU = CommonUncertainties;
+    static constexpr size_t DYUncDim = 3;
+    using DYUncMatrix = ROOT::Math::SMatrix<double, DYUncDim, DYUncDim, ROOT::Math::MatRepSym<double, DYUncDim>>;
+    using DYUncVector = ROOT::Math::SVector<double, DYUncDim>;
+    static constexpr double unc_thr = 0.01;
 
-    CU::lumi().ApplyGlobal(cb, signal_processes, { "TT", "tW", "VV", "W" });
-    CU::cr_DiBoson().ApplyGlobal(cb, { "VV" });
-    CU::cr_TTbar().ApplyGlobal(cb, { "TT" });
+    CU::lumi().ApplyGlobal(cb, signal_processes, bkg_pure_MC, bkg_TT);
+    CU::QCDscale_VV().ApplyGlobal(cb, bkg_VV);
+    CU::QCDscale_EWK().ApplyGlobal(cb, bkg_EWK);
+    CU::QCDscale_ttbar().ApplyGlobal(cb, bkg_TT, bkg_tW);
 
-    CU::scale_j().Apply(cb, 1.02, signal_processes);
-    CU::scale_j().Apply(cb, 1.04, { "TT", "tW", "VV", "W" });
-    CU::scale_b().Apply(cb, 1.02, signal_processes, { "TT", "tW", "VV", "W" });
+    CU::scale_j().Apply(cb, all_mc_processes);
+    CU::scale_b().ApplyGlobal(cb, signal_processes, bkg_pure_MC, bkg_TT);
 
-    CU::eff_btag().Apply(cb, 1.02, signal_processes, { "DY_2b" });
-    CU::eff_btag().Apply(cb, 1.03, { "TT", "DY_1b", "VV", "W" });
-    CU::eff_btag().Apply(cb, 1.04, { "DY_0b", "tW" });
+    static constexpr double eff_b_unc = 0.03;
+    CU::eff_b().Apply(cb, eff_b_unc, bkg_DY_1b, bkg_VV, bkg_W, bkg_EWK, bkg_ZH);
+    CU::eff_b().Apply(cb, eff_b_unc * std::sqrt(2.), signal_processes, bkg_DY_2b, bkg_TT, bkg_tW);
 
-    CU::eff_e().Channel("eTau").Apply(cb, 1.03, all_mc_processes);
-    CU::eff_mu().Channel("muTau").Apply(cb, 1.02, all_mc_processes);
-    CU::eff_tau().Channels({"eTau", "muTau"}).Apply(cb, 1.06, all_mc_processes);
-    CU::eff_tau().Channel("tauTau").Apply(cb, 1.08, all_mc_processes);
-//    CU::scale_tau().Apply(cb, all_mc_processes);
+    CU::eff_e().Channel("eTau").Apply(cb, CU::eff_e().up_value, all_mc_processes);
+    CU::eff_m().Channel("muTau").Apply(cb, CU::eff_m().up_value, all_mc_processes);
+    CU::eff_t().Channels({"eTau", "muTau"}).Apply(cb, CU::eff_t().up_value, all_mc_processes);
+    CU::eff_t().Channel("tauTau").Apply(cb, CU::eff_t().up_value * std::sqrt(2.), all_mc_processes);
+    CU::scale_t().Apply(cb, all_processes);
 
-//    CU::topPt().Apply(cb, { "TT" });
+    CU::topPt().Apply(cb, bkg_TT);
 
-    const Uncertainty DY0b_sf("DY0b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
-    const Uncertainty DY1b_sf("DY1b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
-    const Uncertainty DY2b_sf("DY2b_sf", CorrelationRange::Analysis, UncDistributionType::lnN);
-    DY0b_sf.Apply(cb, 1.01, { "DY_0b", "DY_1b", "DY_2b" });
-    DY1b_sf.Apply(cb, 0.98, { "DY_0b" });
-    DY1b_sf.Apply(cb, 0.80, { "DY_1b", "DY_2b" });
-    DY2b_sf.Apply(cb, 1.01, { "DY_0b" });
-    DY2b_sf.Apply(cb, 1.36, { "DY_1b", "DY_2b" });
+    DYUncMatrix dy_unc_cov;
+    dy_unc_cov[0][0] = dy_unc_cov[1][1] = dy_unc_cov[2][2] = 1.0;
+    dy_unc_cov[0][1] = -0.321;
+    dy_unc_cov[0][2] = 0.149;
+    dy_unc_cov[1][2] = -0.449;
 
+    DYUncVector dy_sf_unc;
+    dy_sf_unc[0] = 0.0017;
+    dy_sf_unc[1] = 0.016;
+    dy_sf_unc[2] = 0.028;
+
+    for(size_t n = 0; n < DYUncDim; ++n) {
+        std::ostringstream ss_unc_name;
+        ss_unc_name << "DY" << n << "b_sf";
+        const Uncertainty DY_norm_unc(ss_unc_name.str(), CorrelationRange::Analysis, UncDistributionType::lnN);
+        for(size_t k = 0; k < DYUncDim; ++k) {
+            const double unc_value = dy_sf_unc[n] * dy_unc_cov[n][k];
+            if(std::abs(unc_value) >= unc_thr)
+                DY_norm_unc.Apply(cb, unc_value, bkg_DY.at(k));
+        }
+    }
+
+    static constexpr double qcd_ss_os_sf = 1.5;
     const Uncertainty qcd_norm("qcd_norm", CorrelationRange::Category, UncDistributionType::lnN);
-//    const Uncertainty qcd_btag_relax("qcd_btag_relax", CorrelationRange::Category, UncDistributionType::shape);
-    qcd_norm.Apply(cb, 1.06, { "QCD" });
-//    qcd_btag_relax.Apply(cb, { "QCD" });
+    for(const auto& channel : desc.channels) {
+        for(const auto& category : desc.categories) {
+            const Yield qcd_yield = GetBackgroundYield(bkg_QCD, channel, category);
+            const double ss_qcd_yield = qcd_yield.value / qcd_ss_os_sf;
+            const double rel_error = 1 / std::sqrt(ss_qcd_yield);
+            if(rel_error >= unc_thr)
+                qcd_norm.Channel(channel).Category(category).Apply(cb, rel_error, bkg_QCD);
+        }
+    }
+
+    const Uncertainty qcd_sf_unc("qcd_sf_unc", CorrelationRange::Category, UncDistributionType::lnN);
+    qcd_sf_unc.Apply(cb, qcd_ss_os_sf - 1, bkg_QCD);
 }
 
 } // namespace Run2_2016

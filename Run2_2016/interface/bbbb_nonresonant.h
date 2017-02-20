@@ -15,16 +15,15 @@ public:
     static const v_str eras;
     static const v_str bkg_processes;
 
-    bbbb_nonresonant(const StatModelDescriptor& _desc);
-    virtual void CreateDatacards(const std::string& shapes_file, const std::string& output_path) override;
+    bbbb_nonresonant(const StatModelDescriptor& _desc, const std::string& input_file_name);
+    virtual void CreateDatacards(const std::string& output_path) override;
 
 private:
-    using ShapeNameRule = std::pair<std::string, std::string>;
-    static std::string NumToName(double x);
-    ShapeNameRule BackgroundShapeNameRule() const;
-    ShapeNameRule SignalShapeNameRule(double point_value) const;
-    void ExtractShapes(ch::CombineHarvester& combine_harvester, const std::string& shapes_file, bool is_signal) const;
-    ch::Categories GetChannelCategories(const std::string& channel);
+    virtual const v_str& SignalProcesses() const override { return signal_processes; }
+    virtual const v_str& BackgroundProcesses() const override { return bkg_processes; }
+
+    virtual ShapeNameRule SignalShapeNameRule() const override { return "$PROCESS"; }
+    virtual ShapeNameRule BackgroundShapeNameRule() const override { return "$PROCESS"; }
 
     void AddSystematics(ch::CombineHarvester& combine_harvester);
 
