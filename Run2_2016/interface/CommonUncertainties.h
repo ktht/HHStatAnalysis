@@ -25,8 +25,8 @@ struct CommonUncertainties {
     UNC(QCDscale_ttbar, LHC, lnN, +0.048, -0.055) // scale & PDF+alpha_s https://twiki.cern.ch/twiki/bin/view/LHCPhysics/TtbarNNLO
     UNC(QCDscale_ggHH, LHC, lnN, +0.043, -0.060) // scale https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHXSWGHH
     UNC(pdf_ggHH, LHC, lnN, 0.059) // Th & PDF & alpha_s https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHXSWGHH
-    UNC(BR_SM_H_bb, LHC, lnN, 0.013) // TH & m_q & alpha_s @ mH=125.09GeV https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
-    UNC(BR_SM_H_tautau, LHC, lnN, 0.016) // TH & m_q & alpha_s @ mH=125.09GeV https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
+    UNC(BR_SM_H_bb, LHC, lnN, 0.013) // Th & m_q & alpha_s @ mH=125.09GeV https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
+    UNC(BR_SM_H_tautau, LHC, lnN, 0.016) // Th & m_q & alpha_s @ mH=125.09GeV https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
 
     // CMS uncertainties
     UNC(scale_j, Experiment, shape)
@@ -34,7 +34,7 @@ struct CommonUncertainties {
     UNC(scale_b, Experiment, lnN, 0.02)
     UNC(eff_b, Experiment, lnN)
     UNC(eff_e, Experiment, lnN, 0.03)
-    UNC(eff_m, Experiment, lnN, 0.02)
+    UNC(eff_m, Experiment, lnN, 0.018)
     UNC(eff_t, Experiment, lnN, 0.06)
     UNC(scale_t, Experiment, shape)
     UNC(topPt, Experiment, shape)
