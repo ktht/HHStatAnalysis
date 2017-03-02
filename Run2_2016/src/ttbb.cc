@@ -130,9 +130,9 @@ void ttbb_base::AddSystematics(ch::CombineHarvester& cb)
     for(const auto& sf_entry : qcd_os_ss_sf) {
         const double rel_stat_unc = std::get<1>(sf_entry.second) / std::get<0>(sf_entry.second);
         double rel_ext_unc = 0;
-        if(std::abs(std::get<2>(sf_entry.second) - std::get<0>(sf_entry.second)) >
-                std::get<1>(sf_entry.second) + std::get<3>(sf_entry.second))
-            rel_ext_unc = std::get<2>(sf_entry.second) / std::get<0>(sf_entry.second) - 1;
+//        if(std::abs(std::get<2>(sf_entry.second) - std::get<0>(sf_entry.second)) >
+//                std::get<1>(sf_entry.second) + std::get<3>(sf_entry.second))
+//            rel_ext_unc = std::get<2>(sf_entry.second) / std::get<0>(sf_entry.second) - 1;
         const double cmb_unc = std::sqrt(std::pow(rel_stat_unc, 2) + std::pow(rel_ext_unc, 2));
         const double cmb_unc_up = rel_ext_unc > 0 ? cmb_unc : rel_stat_unc;
         const double cmb_unc_down = rel_ext_unc < 0 ? -cmb_unc : -rel_stat_unc;
