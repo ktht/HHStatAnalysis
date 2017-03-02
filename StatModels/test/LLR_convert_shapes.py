@@ -15,8 +15,10 @@ parser.add_argument('--input', required=True, dest='input_path', type=str, metav
                     help="path were located original histograms")
 parser.add_argument('--output', required=True, dest='output', type=str, metavar='OUTPUT_FILE',
                     help="path were to store limits")
-parser.add_argument('--analysis', required=True, dest='analysis', type=str, metavar='OUTPUT_FILE',
+parser.add_argument('--analysis', required=True, dest='analysis', type=str, metavar='ANA',
                     help="res_lm, res_hm or nonres")
+parser.add_argument('--norm-unc-path', required=False, dest='norm_unc_path', default='', type=str, metavar='NORM_PATH',
+                    help="path to the text files with normailzation variations for shape uncertainties")
 parser.add_argument('--ignoreShapeUnc', action="store_true", help="Ignore shape uncertainties.")
 args = parser.parse_args()
 
@@ -65,6 +67,7 @@ class UncDesc:
         self.LLR_name = LLR_name
         self.shape_variable = None
         self.scale_upper_case = scale_upper_case
+        self.norm_correction_dict = None
 
     def GetHistName(self, sample, channel, category, scale_variation):
         hist_name = '{}'.format(sample)
@@ -127,6 +130,32 @@ class Hist:
             raise RuntimeError('Can not create histogram {} for {}.'.format(self.name, dir.GetName()))
         dir.WriteTObject(self.root_hist, self.name, 'Overwrite')
 
+class NormCorrectionDictionary:
+    def __init__(self, path, channel, category, unc_suffix):
+        self.scale_factors = {}
+        file_name = '{}/{}_{}_{}.txt'.format(path, channel, category, unc_suffix)
+        file = open(file_name, 'r')
+        lines = [ s.strip() for s in file.readlines() ]
+        lines = filter(lambda s: len(s) != 0, lines)
+        for line in lines:
+            columns = filter(lambda s: len(s) != 0, re.split(" |\t", line))
+            if len(columns) != 3:
+                raise RuntimeError('Invalid format in input file {}'.format(file_name))
+            sample_name = columns[0]
+            up = float(columns[1])
+            down = float(columns[2])
+            if sample_name in self.scale_factors:
+                raise RuntimeError('Duplicated sample name "{}" in input file {}'.format(sample_name, file_name))
+            self.scale_factors[sample_name] = { 'Up' : up, 'Down' : down }
+
+    def GetScaleFactor(self, sample_name, scale_variation):
+        if sample_name not in self.scale_factors:
+            raise RuntimeError('Scale factor not found for sample "".'.format(sample_name))
+        if scale_variation not in self.scale_factors[sample_name]:
+            raise RuntimeError('Scale variation "" not found for sample "".'.format(scale_variation, sample_name))
+        return self.scale_factors[sample_name][scale_variation]
+
+
 tauES_unc = UncDesc('scale_t', CorrelationRange.Experiment, 'tau', False)
 jetES_unc = UncDesc('scale_j', CorrelationRange.Experiment, 'jet', False)
 topPt_unc = UncDesc('topPt', CorrelationRange.Experiment, 'top', True)
@@ -137,7 +166,7 @@ bins = [
     BinDesc('DY_0b', [ 'DY0b' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
     BinDesc('DY_1b', [ 'DY1b' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
     BinDesc('DY_2b', [ 'DY2b' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
-    BinDesc('QCD', [ 'QCD' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = False),
+    BinDesc('QCD', [ 'QCD' ], unc_list = [ ], save_all_regions = False),
     BinDesc('W', [ 'WJets' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
     BinDesc('tW', [ 'TW' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
     BinDesc('WW', [ 'WW' ], unc_list = [ tauES_unc, jetES_unc ], save_all_regions = True),
@@ -149,7 +178,7 @@ bins = [
 
 if args.analysis == 'res_lm' or args.analysis == 'res_hm':
     shape_variable = 'HHKin_mass_raw'
-    masses = [ 250, 270, 280, 300, 350, 400, 500, 550, 650, 750, 900 ]
+    masses = [ 250, 270, 280, 300, 350, 400, 450, 500, 550, 600, 650, 750, 900 ]
     out_name_source = lambda bin_name, point: '{}_M{}'.format(bin_name, point)
     LLR_name_source = lambda sample, point: '{}{}'.format(sample, point)
     bins.append(BinDesc('ggRadion_hh_ttbb', [ 'Radion' ], points_desc = [ out_name_source, LLR_name_source, masses ],
@@ -168,8 +197,11 @@ eMu_Tau_categories = None
 tauTau_categories = { 'res1b': 's1b1jresolvedMcut', 'res2b': 's2b0jresolvedMcut',
                       'boosted': 'sboostedLLMcut' }
 
-if args.analysis == 'res_lm' or args.analysis == 'nonres':
+if args.analysis == 'res_lm':
     eMu_Tau_categories = { 'res1b': 's1b1jresolvedMcutlmr90', 'res2b': 's2b0jresolvedMcutlmr90',
+                           'boosted': 'sboostedLLMcut' }
+elif args.analysis == 'nonres':
+    eMu_Tau_categories = { 'res1b': 's1b1jresolvedMcutlmr70', 'res2b': 's2b0jresolvedMcutlmr70',
                            'boosted': 'sboostedLLMcut' }
 else:
     eMu_Tau_categories = { 'res1b': 's1b1jresolvedMcuthmr90', 'res2b': 's2b0jresolvedMcuthmr90',
@@ -190,6 +222,8 @@ for channel,channel_desc in channels.iteritems():
     input_file = OpenLLRFile(LLR_channel)
     for category,LLR_category in categories.iteritems():
         output_dir_name = '{}_{}'.format(channel, category)
+        tauES_unc.norm_correction_dict = NormCorrectionDictionary(args.norm_unc_path, LLR_channel, LLR_category, 'tes')
+        jetES_unc.norm_correction_dict = NormCorrectionDictionary(args.norm_unc_path, LLR_channel, LLR_category, 'jes')
         for LLR_region,region in regions.iteritems():
             output_dir_name = '{}_{}'.format(channel, category)
             if len(region) > 0:
@@ -220,6 +254,9 @@ for channel,channel_desc in channels.iteritems():
                                                                        LLR_region, scale_variation)
                                 print '\t\t\t\t{}'.format(LLR_unc_hist_name)
                                 new_unc_hist = LoadHistogram(input_file, LLR_unc_hist_name, True)
+                                if unc.norm_correction_dict != None:
+                                    sf = unc.norm_correction_dict.GetScaleFactor(LLR_sample_name, scale_variation)
+                                    new_unc_hist.Scale(sf)
                                 unc_hist.Add(new_unc_hist)
                             unc_hist.Write(output_dir)
     input_file.Close()

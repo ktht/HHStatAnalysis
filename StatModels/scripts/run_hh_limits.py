@@ -23,6 +23,8 @@ parser.add_argument('--plotOnly', action="store_true", help="Run only plots.")
 parser.add_argument('--collectAndPlot', action="store_true", help="Run only plots.")
 parser.add_argument('--impacts', action="store_true",
                     help="Compute impact of each nuissance parameter to the final result.")
+parser.add_argument('--pulls', action="store_true", help="Compute pulls.")
+parser.add_argument('--GoF', action="store_true", help="Evaluate goodness of fit.")
 parser.add_argument('shapes_file', type=str, nargs='+', help="file with input shapes")
 
 args = parser.parse_args()
@@ -68,6 +70,71 @@ if limit_type in Set(['model_independent', 'SM', 'NonResonant_BSM']):
         sh_call('combineTool.py -M CollectLimits */*/*.limit.* --use-dirs -o {}'.format(limit_json_file),
                 "error while collecting limits")
 
+    if args.pulls:
+        channels = filter(lambda f: os.path.isdir(f), os.listdir('.'))
+        for channel in channels:
+            points = filter(lambda f: os.path.isdir('{}/{}'.format(channel, f)), os.listdir(channel))
+            for point in points:
+                ch_dir('{}/{}'.format(channel, point))
+                pulls_work_path = 'pulls'
+                if not os.path.exists(pulls_work_path):
+                    os.makedirs(pulls_work_path)
+                ch_dir(pulls_work_path)
+
+                max_likelihood_cmd = 'combine -M MaxLikelihoodFit ../workspace.root --robustFit=1 --expectSignal=1'
+                if model_desc.blind:
+                    max_likelihood_cmd += ' -t -1'
+
+                sh_call(max_likelihood_cmd, "error while running MaxLikelihoodFit")
+
+                diffNuisances = os.environ['CMSSW_BASE'] + '/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py'
+                pulls_out = '../../../pulls_{}_{}'.format(channel, point)
+                pulls_txt_out = '{}.txt'.format(pulls_out)
+                pulls_root_out = '{}.root'.format(pulls_out)
+
+                pulls_cmd = 'python {} mlfit.root -A -a -f text -g {} > {}'.format(diffNuisances,
+                            pulls_root_out, pulls_txt_out)
+
+                sh_call(pulls_cmd, "error while creating pulls")
+                ch_dir('../../..')
+
+    if args.GoF:
+        channels = filter(lambda f: os.path.isdir(f), os.listdir('.'))
+        for channel in channels:
+            points = filter(lambda f: os.path.isdir('{}/{}'.format(channel, f)), os.listdir(channel))
+            point = points[0]
+            ch_dir('{}/{}'.format(channel, point))
+            gof_work_path = 'GoF'
+            if not os.path.exists(gof_work_path):
+                os.makedirs(gof_work_path)
+            ch_dir(gof_work_path)
+
+            gof_algo = 'saturated'
+            n_toys = 800
+            n_toys_per_job = n_toys / args.n_parallel
+
+            gof_out = '../../../GoF_{}_{}'.format(channel, gof_algo)
+            gof_json_out = '{}.json'.format(gof_out)
+
+            gof_cmd = 'combineTool.py -M GoodnessOfFit --algorithm {} -d ../workspace.root --fixedSignalStrength=0' \
+                      .format(gof_algo)
+
+            sh_call('{} -n .{}'.format(gof_cmd, gof_algo), "error while evaluating goodness of fit for data")
+            sh_call('{} -n .{}.toys -t {} -s 0:{}:1 --parallel {}' \
+                    .format(gof_cmd, gof_algo, n_toys_per_job, args.n_parallel - 1, args.n_parallel),
+                    "error while generating toys for goodness of fit")
+
+            sh_call('combineTool.py -M CollectGoodnessOfFit --input higgsCombine.{0}.GoodnessOfFit.mH120.root' \
+                    ' higgsCombine.{0}.toys.GoodnessOfFit.mH120.*.root -o {1}' \
+                    .format(gof_algo, gof_json_out),
+                    "error while collecting toys for goodness of fit")
+
+            plotGoF = os.environ['CMSSW_BASE'] + '/src/CombineHarvester/CombineTools/scripts/plotGof.py'
+            sh_call('{} --statistic {} --mass 120.0 {} -o {}'.format(plotGoF, gof_algo, gof_json_out, gof_out),
+                    "error while plotting goodness of fit")
+
+            ch_dir('../../..')
+
     if args.impacts:
         channels = filter(lambda f: os.path.isdir(f), os.listdir('.'))
         for channel in channels:
@@ -78,8 +145,11 @@ if limit_type in Set(['model_independent', 'SM', 'NonResonant_BSM']):
                 if not os.path.exists(impacts_work_path):
                     os.makedirs(impacts_work_path)
                 ch_dir(impacts_work_path)
-                impact_cmd = 'combineTool.py -M Impacts -m {} -d ../workspace.root -t -1 --expectSignal 1' \
-                             ' --parallel {}'.format(point, args.n_parallel)
+                impact_cmd = 'combineTool.py -M Impacts -m {} -d ../workspace.root --expectSignal 1' \
+                             ' --allPars --parallel {}'.format(point, args.n_parallel)
+                if model_desc.blind:
+                    impact_cmd += ' -t -1'
+
                 sh_call(impact_cmd + ' --doInitialFit', "error while doing initial fit for impacts")
                 sh_call(impact_cmd + ' --robustFit 1 --doFits', "error while doing robust fit for impacts")
                 sh_call('combineTool.py -M Impacts -m {} -d ../workspace.root -o impacts.json'.format(point),
