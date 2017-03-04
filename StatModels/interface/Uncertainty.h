@@ -193,7 +193,7 @@ struct Uncertainty {
     {
         const auto up_down = std::make_pair(ConvertToDatacardUncValue(up_down_values.first),
                                             ConvertToDatacardUncValue(up_down_values.second));
-        ApplyMap(cb, ch::syst::SystMapAsymm<>::init(up_down.first, up_down.second), processes...);
+        ApplyMap(cb, ch::syst::SystMapAsymm<>::init(up_down.second, up_down.first), processes...);
     }
 
     template<typename ...Processes>

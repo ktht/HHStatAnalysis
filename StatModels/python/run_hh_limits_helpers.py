@@ -25,6 +25,7 @@ def sh_call(cmd, error_message):
 
 def ch_dir(path):
     try:
+        print '>> cd ', path
         os.chdir(path)
     except OSError:
         run_failed("error while changing working directory to '{}'".format(path))

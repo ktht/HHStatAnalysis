@@ -51,6 +51,9 @@ void ttbb_nonresonant::CreateDatacards(const std::string& output_path)
     harvester.cp().backgrounds().AddBinByBin(bbb_unc_threshold, true, &harvester);
     ch::SetStandardBinNames(harvester);
 
+    harvester.SetGroup("QCD_bbb", { ".*_QCD_bin_[0-9]+" });
+    harvester.SetGroup("DY_bbb", { ".*_DY_[0-9]b_bin_[0-9]+" });
+
     std::string output_pattern = "/$TAG/$MASS/$BIN.txt";
 
     ch::CardWriter writer(output_path + output_pattern, output_path + "/$TAG/hh_ttbb_input.root");

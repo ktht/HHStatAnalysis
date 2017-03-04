@@ -14,7 +14,8 @@ class ttbb_base : public StatModel {
 public:
     static const v_str ana_name;
     static const v_str eras;
-    static const std::string bkg_TT, bkg_tW, bkg_W, bkg_EWK, bkg_ZH, bkg_QCD, bkg_DY_0b, bkg_DY_1b, bkg_DY_2b;
+    static const std::string bkg_TT, bkg_tW, bkg_W, bkg_EWK, bkg_ZH, bkg_QCD, bkg_DY_0b, bkg_DY_1b, bkg_DY_2b,
+                             bkg_WW, bkg_WZ, bkg_ZZ;
     static const v_str bkg_DY, bkg_VV;
     static const v_str bkg_pure_MC, bkg_MC, bkg_all;
 
