@@ -38,6 +38,13 @@ public:
         CheckReadParamCounts("per_category_limits", 1, Condition::less_equal);
         CheckReadParamCounts("grid_x", 1, Condition::less_equal);
         CheckReadParamCounts("grid_y", 1, Condition::less_equal);
+        CheckReadParamCounts("label_status", 1, Condition::less_equal);
+        CheckReadParamCounts("label_scenario", 1, Condition::less_equal);
+        CheckReadParamCounts("label_lumi", 1, Condition::less_equal);
+        CheckReadParamCounts("title_x", 1, Condition::less_equal);
+        CheckReadParamCounts("title_y", 1, Condition::less_equal);
+        CheckReadParamCounts("draw_range_x", 1, Condition::less_equal);
+        CheckReadParamCounts("draw_range_y", 1, Condition::less_equal);
 
         (*descriptors)[current.name] = current;
     }
@@ -61,6 +68,13 @@ public:
         ParseEntry("per_category_limits", current.per_category_limits);
         ParseEntry("grid_x", current.grid_x);
         ParseEntry("grid_y", current.grid_y);
+        ParseEntry("label_status", current.label_status);
+        ParseEntry("label_scenario", current.label_scenario);
+        ParseEntry("label_lumi", current.label_lumi);
+        ParseEntry("title_x", current.title_x);
+        ParseEntry("title_y", current.title_y);
+        ParseEntry("draw_range_x", current.draw_range_x);
+        ParseEntry("draw_range_y", current.draw_range_y);
         ParseEntry("custom_param", current.custom_params);
     }
 

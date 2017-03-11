@@ -33,6 +33,8 @@ struct StatModelDescriptor {
     bool blind, morph, combine_channels, per_channel_limits, per_category_limits;
     RangeWithStep<double> grid_x, grid_y;
 
+    std::string label_status, label_scenario, label_lumi, title_x, title_y;
+    Range<double> draw_range_x, draw_range_y;
 
     std::map<std::string, std::string> custom_params;
 
