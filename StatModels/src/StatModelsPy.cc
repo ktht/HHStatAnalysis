@@ -44,6 +44,10 @@ BOOST_PYTHON_MODULE(libHHStatAnalysisStatModels)
         .value("SM", LimitType::SM)
         .value("MSSM", LimitType::MSSM)
         .value("NonResonant_BSM", LimitType::NonResonant_BSM);
+    class_<Range<double>>("Range", init<>())
+        .def(init<double, double>())
+        .def("min", &Range<double>::min)
+        .def("max", &Range<double>::max);
     class_<RangeWithStep<double>>("RangeWithStep", init<>())
         .def(init<double, double, double>())
         .def("min", &RangeWithStep<double>::min)
@@ -51,12 +55,30 @@ BOOST_PYTHON_MODULE(libHHStatAnalysisStatModels)
         .def("step", &RangeWithStep<double>::step);
     class_<StatModelDescriptor>("StatModelDescriptor")
         .def_readwrite("name", &StatModelDescriptor::name)
+        .def_readwrite("stat_model", &StatModelDescriptor::stat_model)
         .def_readwrite("channels", &StatModelDescriptor::channels)
+        .def_readwrite("categories", &StatModelDescriptor::categories)
+        .def_readwrite("signal_process", &StatModelDescriptor::signal_process)
+        .def_readwrite("model_signal_process", &StatModelDescriptor::model_signal_process)
+        .def_readwrite("signal_point_prefix", &StatModelDescriptor::signal_point_prefix)
+        .def_readwrite("signal_points", &StatModelDescriptor::signal_points)
         .def_readwrite("limit_type", &StatModelDescriptor::limit_type)
+        .def_readwrite("th_model_file", &StatModelDescriptor::th_model_file)
         .def_readwrite("blind", &StatModelDescriptor::blind)
+        .def_readwrite("morph", &StatModelDescriptor::morph)
+        .def_readwrite("combine_channels", &StatModelDescriptor::combine_channels)
+        .def_readwrite("per_channel_limits", &StatModelDescriptor::per_channel_limits)
+        .def_readwrite("per_category_limits", &StatModelDescriptor::per_category_limits)
         .def_readwrite("grid_x", &StatModelDescriptor::grid_x)
         .def_readwrite("grid_y", &StatModelDescriptor::grid_y)
-        .def_readwrite("th_model_file", &StatModelDescriptor::th_model_file);
+        .def_readwrite("label_status", &StatModelDescriptor::label_status)
+        .def_readwrite("label_scenario", &StatModelDescriptor::label_scenario)
+        .def_readwrite("label_lumi", &StatModelDescriptor::label_lumi)
+        .def_readwrite("title_x", &StatModelDescriptor::title_x)
+        .def_readwrite("title_y", &StatModelDescriptor::title_y)
+        .def_readwrite("draw_range_x", &StatModelDescriptor::draw_range_x)
+        .def_readwrite("draw_range_y", &StatModelDescriptor::draw_range_y)
+        .def_readwrite("custom_params", &StatModelDescriptor::custom_params);
     def("LoadDescriptor", LoadDescriptor);
     def("ToList", ToPythonList<std::string>);
     def("ToDict", ToPythonDict<std::string, std::string>);

@@ -209,18 +209,25 @@ elif limit_type == 'MSSM':
             os.makedirs(work_path)
         ch_dir(work_path)
 
-        asymptoticGrid_cmd = 'combineTool.py -M AsymptoticGrid ../../{} -d ../{} --parallel {}'.format(
-                             grid_file_name, workspace_file, args.n_parallel)
-        if model_desc.blind:
-            asymptoticGrid_cmd += ' -t -1'
-
-        if run_limits:
-            sh_call(asymptoticGrid_cmd, "error while executing combine")
         if collect_limits:
+            asymptoticGrid_cmd = 'combineTool.py -M AsymptoticGrid ../../{} -d ../{} --parallel {}'.format(
+                                 grid_file_name, workspace_file, args.n_parallel)
+            if model_desc.blind:
+                asymptoticGrid_cmd += ' -t -1'
+
+            if run_limits:
+                sh_call(asymptoticGrid_cmd, "error while executing combine")
             sh_call(asymptoticGrid_cmd, "error while collecting jobs")
 
         output_name = '../../limits_{}_{}'.format(model_desc.limit_type, channel)
-        sh_call('{} {} --output {} --contours {}'.format(plotLimitGrid, 'asymptotic_grid.root', output_name, contours),
+        output_root = '{}.root'.format(output_name)
+        draw_range_x = '{},{}'.format(model_desc.draw_range_x.min(), model_desc.draw_range_x.max())
+        draw_range_y = '{},{}'.format(model_desc.draw_range_y.min(), model_desc.draw_range_y.max())
+        sh_call('{} {} --output {} --debug-output {} --contours {} --cms-sub "{}" --scenario-label "{}"' \
+                ' --title-right "{}" --x-range {} --y-range {} --x-title "{}" --y-title "{}"' \
+                .format(plotLimitGrid, 'asymptotic_grid.root', output_name, output_root, contours,
+                model_desc.label_status, model_desc.label_scenario, model_desc.label_lumi, draw_range_x, draw_range_y,
+                model_desc.title_x, model_desc.title_y),
                 "error while plotting limits")
 
         ch_dir('../..')
