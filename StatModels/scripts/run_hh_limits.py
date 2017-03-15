@@ -223,12 +223,20 @@ elif limit_type == 'MSSM':
         output_root = '{}.root'.format(output_name)
         draw_range_x = '{},{}'.format(model_desc.draw_range_x.min(), model_desc.draw_range_x.max())
         draw_range_y = '{},{}'.format(model_desc.draw_range_y.min(), model_desc.draw_range_y.max())
-        sh_call('{} {} --output {} --debug-output {} --contours {} --cms-sub "{}" --scenario-label "{}"' \
-                ' --title-right "{}" --x-range {} --y-range {} --x-title "{}" --y-title "{}"' \
-                .format(plotLimitGrid, 'asymptotic_grid.root', output_name, output_root, contours,
-                model_desc.label_status, model_desc.label_scenario, model_desc.label_lumi, draw_range_x, draw_range_y,
-                model_desc.title_x, model_desc.title_y),
-                "error while plotting limits")
+        draw_cmd = '{} {} --output {} --debug-output {} --contours {} --cms-sub "{}" --scenario-label "{}"' \
+                   ' --title-right "{}" --x-range {} --y-range {} --x-title "{}" --y-title "{}"'.format(
+                   plotLimitGrid, 'asymptotic_grid.root', output_name, output_root, contours, model_desc.label_status,
+                   model_desc.label_scenario, model_desc.label_lumi, draw_range_x, draw_range_y, model_desc.title_x,
+                   model_desc.title_y)
+        if model_desc.draw_mh_exclusion or model_desc.draw_mH_isolines:
+            draw_cmd += ' --model_file "{}"'.format(th_model_file_full_path)
+            if model_desc.draw_mh_exclusion:
+                draw_cmd += ' --draw_mh_exclusion'
+            if model_desc.draw_mH_isolines:
+                signal_point_list = ','.join(model_desc.signal_points)
+                draw_cmd += ' --draw_mH_isolines --mH_values {} --iso_label_draw_margin {}' \
+                            .format(signal_point_list, model_desc.iso_label_draw_margin)
+        sh_call(draw_cmd, "error while plotting limits")
 
         ch_dir('../..')
 
