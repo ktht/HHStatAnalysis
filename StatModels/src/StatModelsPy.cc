@@ -78,6 +78,9 @@ BOOST_PYTHON_MODULE(libHHStatAnalysisStatModels)
         .def_readwrite("title_y", &StatModelDescriptor::title_y)
         .def_readwrite("draw_range_x", &StatModelDescriptor::draw_range_x)
         .def_readwrite("draw_range_y", &StatModelDescriptor::draw_range_y)
+        .def_readwrite("draw_mh_exclusion", &StatModelDescriptor::draw_mh_exclusion)
+        .def_readwrite("draw_mH_isolines", &StatModelDescriptor::draw_mH_isolines)
+        .def_readwrite("iso_label_draw_margin", &StatModelDescriptor::iso_label_draw_margin)
         .def_readwrite("custom_params", &StatModelDescriptor::custom_params);
     def("LoadDescriptor", LoadDescriptor);
     def("ToList", ToPythonList<std::string>);

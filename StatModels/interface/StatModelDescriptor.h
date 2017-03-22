@@ -35,6 +35,8 @@ struct StatModelDescriptor {
 
     std::string label_status, label_scenario, label_lumi, title_x, title_y;
     Range<double> draw_range_x, draw_range_y;
+    bool draw_mh_exclusion, draw_mH_isolines;
+    double iso_label_draw_margin;
 
     std::map<std::string, std::string> custom_params;
 
@@ -52,7 +54,8 @@ struct StatModelDescriptor {
 
     StatModelDescriptor() :
         limit_type(LimitType::ModelIndependent), blind(true), morph(false), combine_channels(true),
-        per_channel_limits(false), per_category_limits(false) {}
+        per_channel_limits(false), per_category_limits(false), draw_mh_exclusion(false), draw_mH_isolines(false),
+        iso_label_draw_margin(0.8) {}
 };
 
 using ModelDescriptorCollection = std::unordered_map<std::string, StatModelDescriptor>;

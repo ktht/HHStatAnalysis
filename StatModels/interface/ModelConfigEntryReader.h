@@ -45,6 +45,9 @@ public:
         CheckReadParamCounts("title_y", 1, Condition::less_equal);
         CheckReadParamCounts("draw_range_x", 1, Condition::less_equal);
         CheckReadParamCounts("draw_range_y", 1, Condition::less_equal);
+        CheckReadParamCounts("draw_mh_exclusion", 1, Condition::less_equal);
+        CheckReadParamCounts("draw_mH_isolines", 1, Condition::less_equal);
+        CheckReadParamCounts("iso_label_draw_margin", 1, Condition::less_equal);
 
         (*descriptors)[current.name] = current;
     }
@@ -75,6 +78,9 @@ public:
         ParseEntry("title_y", current.title_y);
         ParseEntry("draw_range_x", current.draw_range_x);
         ParseEntry("draw_range_y", current.draw_range_y);
+        ParseEntry("draw_mh_exclusion", current.draw_mh_exclusion);
+        ParseEntry("draw_mH_isolines", current.draw_mH_isolines);
+        ParseEntry("iso_label_draw_margin", current.iso_label_draw_margin);
         ParseEntry("custom_param", current.custom_params);
     }
 
