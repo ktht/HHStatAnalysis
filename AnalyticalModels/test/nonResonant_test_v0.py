@@ -65,7 +65,7 @@ def main():
       bmhh = sumHAnalyticalBin.GetXaxis().FindBin(mhh)
       bcost = sumHAnalyticalBin.GetYaxis().FindBin(cost)
       effSumV0 = sumHAnalyticalBin.GetBinContent(bmhh,bcost)  # quantity of simulated events in that bin (without cuts)
-      weight = model.getScaleFactor(mhhcost,kl, kt, effSumV0) / calcSumOfWeights  # model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7, effSumV0) 
+      weight = model.getScaleFactor(mhh , cost,kl, kt, effSumV0 , calcSumOfWeights)   # model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7, effSumV0) 
       #############################################
       # fill histograms to test
       #############################################

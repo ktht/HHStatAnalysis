@@ -81,18 +81,20 @@ class NonResonantModel:
       return float(sumOfWeights)
 
     # distribute the calculated GenMHH and CostS in the bins numbering  (matching the coefficientsByBin_klkt.txt)
-    def getScaleFactor(self,mhhcost,kl, kt, effSumV0) : # ,effSM,MHH,COSTS,A1,A3,A7):   
+    def getScaleFactor(self,mhh , cost,kl, kt, effSumV0,calcSumOfWeights) : # ,effSM,MHH,COSTS,A1,A3,A7):   
        binGenMHH = [250.,270.,300.,330.,360.,390., 420.,450.,500.,550.,600.,700.,800.,1000.]
        binGenCostS  = [ -1., -0.55,0.55,1.  ]
        # determine from which bin the event belong
        binmhh = 0
        bincost = 0
        for ii in range (0,13) : 
-         if mhhcost[0] > binGenMHH[12-ii] : 
+         if mhh >= binGenMHH[12-ii] : 
+         #if mhhcost[0] >= binGenMHH[12-ii] : 
             binmhh = 12-ii 
             break
        for ii in range (0,3) : 
-         if mhhcost[1] > binGenCostS[2-ii] : 
+         #if mhhcost[1] >= binGenCostS[2-ii] :
+         if cost >= binGenCostS[2-ii] : 
             bincost = 2-ii
             break
        # calculate the weight
@@ -102,7 +104,7 @@ class NonResonantModel:
           A = [self.A1[bincost][binmhh],self.A3[bincost][binmhh],self.A7[bincost][binmhh]]
           effBSM = float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
           #if v1 ==0 : CalcWeight = effBSM/float(effSum[bincost][binmhh]) # ==> JHEP sum in denominator
-          CalcWeight = effBSM/float(effSumV0) # ==> V0 sum in denominator (Moriond 2016)
+          CalcWeight = (effBSM/float(effSumV0))/calcSumOfWeights # ==> V0 sum in denominator (Moriond 2016)
           return CalcWeight
        else : return 0
 
