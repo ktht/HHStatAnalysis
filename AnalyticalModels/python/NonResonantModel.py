@@ -129,7 +129,7 @@ class NonResonantModel:
                self.A13[bincost][binmhh],self.A14[bincost][binmhh],self.A15[bincost][binmhh]]
             #if HistoAllEvents.GetBinContent(binmhh,bincost) > 0 : 
             sumOfWeights+=float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,c2,cg,c2g,A)/self.functionGF(kl,kt,c2,cg,c2g,A13tev))
-            sumW+=self.functionGF(kl,kt,c2,cg,c2g,A13tev)
+            sumW+=self.functionGF(kl,kt,c2,cg,c2g,A13tev) 
             sumW2+=self.functionGF(kl,kt,c2,cg,c2g,A)
             sumSM+=self.effSM[bincost][binmhh]
       fileHH.Close()
@@ -244,8 +244,8 @@ class NonResonantModel:
     def FindBin(self,mhh,cost,histfile) :
        fileHH=ROOT.TFile(histfile) #Distros_5p_SM3M_sumBenchJHEP_13TeV.root") # do the histo from V0
        sumJHEPAnalyticalBin = fileHH.Get("SumV0_AnalyticalBinExt")
-       bmhh = histfile.GetXaxis().FindBin(mhh)
-       bcost = histfile.GetYaxis().FindBin(cost)
+       bmhh = sumJHEPAnalyticalBin.GetXaxis().FindBin(mhh)
+       bcost = sumJHEPAnalyticalBin.GetYaxis().FindBin(cost)
        effSumV0 = sumJHEPAnalyticalBin.GetBinContent(bmhh,bcost) 
        fileHH.Close()
        #print (mhh,cost,bmhh,bcost,effSumV0)
