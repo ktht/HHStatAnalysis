@@ -108,9 +108,9 @@ class NonResonantModel:
         # and at the end of the function return it
         print "Stored coefficients by bin"
 
-    def getNormalization(self,kl, kt,c2,cg,c2g,HistoAllEventsName):
-      fileHH=ROOT.TFile(HistoAllEventsName) 
-      HistoAllEvents = fileHH.Get("SumV0_AnalyticalBinExt")   
+    def getNormalization(self,kl, kt,c2,cg,c2g,HistoAllEvents):
+      #fileHH=ROOT.TFile(HistoAllEventsName) 
+      #HistoAllEvents = fileHH.Get("SumV0_AnalyticalBinExt")   
       sumOfWeights = 0 
       A13tev = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
       sumW=0
@@ -132,7 +132,6 @@ class NonResonantModel:
             sumW+=self.functionGF(kl,kt,c2,cg,c2g,A13tev) 
             sumW2+=self.functionGF(kl,kt,c2,cg,c2g,A)
             sumSM+=self.effSM[bincost][binmhh]
-      fileHH.Close()
       return float(sumOfWeights)
 
     # distribute the calculated GenMHH and CostS in the bins numbering  (matching the coefficientsByBin_klkt.txt)
@@ -242,12 +241,12 @@ class NonResonantModel:
                 counteventSM+=1
 
     def FindBin(self,mhh,cost,histfile) :
-       fileHH=ROOT.TFile(histfile) #Distros_5p_SM3M_sumBenchJHEP_13TeV.root") # do the histo from V0
-       sumJHEPAnalyticalBin = fileHH.Get("SumV0_AnalyticalBinExt")
-       bmhh = sumJHEPAnalyticalBin.GetXaxis().FindBin(mhh)
-       bcost = sumJHEPAnalyticalBin.GetYaxis().FindBin(cost)
-       effSumV0 = sumJHEPAnalyticalBin.GetBinContent(bmhh,bcost) 
-       fileHH.Close()
+       #fileHH=ROOT.TFile(histfile) #Distros_5p_SM3M_sumBenchJHEP_13TeV.root") # do the histo from V0
+       #sumJHEPAnalyticalBin = fileHH.Get("SumV0_AnalyticalBinExt")
+       bmhh = histfile.GetXaxis().FindBin(mhh)
+       bcost = histfile.GetYaxis().FindBin(cost)
+       effSumV0 = histfile.GetBinContent(bmhh,bcost) 
+       #fileHH.Close()
        #print (mhh,cost,bmhh,bcost,effSumV0)
        return effSumV0
 

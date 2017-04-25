@@ -46,7 +46,7 @@ def main():
   fileHH=ROOT.TFile("../../../Analysis/Support/NonResonant/Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root")
   sumJHEPAnalyticalBin = fileHH.Get("H1bin3")
   SMAnalyticalBin = fileHH.Get("H0bin3")
-
+  #fileHHname = "../../../Analysis/Support/NonResonant/Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root"
   calcSumOfWeights = model.getNormalization(kl, kt,c2,cg,c2g,sumJHEPAnalyticalBin)  # this input is flexible, tatabb may have only the SM
   #print ("normalization is: ",calcSumOfWeights)
   #xaxis = sumJHEPAnalyticalBin.GetXaxis()
