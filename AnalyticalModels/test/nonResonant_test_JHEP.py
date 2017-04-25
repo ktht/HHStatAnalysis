@@ -2,6 +2,7 @@
 # Analytical reweighting implementation for H->4b
 # This file is part of https://github.com/cms-hh/HHStatAnalysis.
 # python nonResonant_test_JHEP.py  --kl 1 --kt 1
+# python nonResonant_test_JHEP.py  --kl 0.0001 --kt 0.0001 --c2 -3.0 --cg 0.0 --c2g -1.5
 # compiling
 from optparse import OptionParser
 import ROOT
@@ -25,7 +26,7 @@ cg = options.cgg
 c2g = options.c2gg
 
 print "Weights calculated from the 12 benchmarks defined in 1507.02245v4 (JHEP version) each one with 100k events "
-if c2 != 0 or cg != 0 or c2g != 0 :  print "The analytical function is not yet implemented"
+#if c2 != 0 or cg != 0 or c2g != 0 :  print "The analytical function is not yet implemented"
 
 ###########################################################
 # read events and apply weight
@@ -33,15 +34,24 @@ if c2 != 0 or cg != 0 or c2g != 0 :  print "The analytical function is not yet i
 def main():
   model = NonResonantModel()
   # obtaining BSM/SM coeficients
-  dumb = model.ReadCoefficients("../data/coefficientsByBin_klkt.txt",model.effSM,model.effSum,model.MHH,model.COSTS,model.A1,model.A3,model.A7) 
+  #dumb = model.ReadCoefficients("../data/coefficientsByBin_A1A3A7.txt") 
+  dumb = model.ReadCoefficients("../data/coefficientsByBin_extended_3M.txt") 
   # We sum SM + box + the benchmarks from 2-13 
   # read the 2D histo referent to the sum of events
-  fileHH=ROOT.TFile("../../Support/NonResonant/Distros_5p_SM3M_sumBenchJHEP_13TeV.root")
+  """
+  fileHH=ROOT.TFile("../../../Support/NonResonant/Distros_5p_SM3M_sumBenchJHEP_13TeV.root")
   sumJHEPAnalyticalBin = fileHH.Get("H1bin2")
   SMAnalyticalBin = fileHH.Get("H0bin2")
-  xaxis = sumJHEPAnalyticalBin.GetXaxis()
-  yaxis = sumJHEPAnalyticalBin.GetYaxis()
-  print "Sum hist ",sumJHEPAnalyticalBin.GetNbinsX(),sumJHEPAnalyticalBin.GetNbinsY(),sumJHEPAnalyticalBin.Integral(),sumJHEPAnalyticalBin.GetXaxis().GetBinLowEdge(1),sumJHEPAnalyticalBin.GetXaxis().GetBinUpEdge(xaxis.GetNbins())
+  """
+  fileHH=ROOT.TFile("../../../Analysis/Support/NonResonant/Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root")
+  sumJHEPAnalyticalBin = fileHH.Get("H1bin3")
+  SMAnalyticalBin = fileHH.Get("H0bin3")
+
+  calcSumOfWeights = model.getNormalization(kl, kt,c2,cg,c2g,sumJHEPAnalyticalBin)  # this input is flexible, tatabb may have only the SM
+  #print ("normalization is: ",calcSumOfWeights)
+  #xaxis = sumJHEPAnalyticalBin.GetXaxis()
+  #yaxis = sumJHEPAnalyticalBin.GetYaxis()
+  #print "Sum hist ",sumJHEPAnalyticalBin.GetNbinsX(),sumJHEPAnalyticalBin.GetNbinsY(),sumJHEPAnalyticalBin.Integral(),sumJHEPAnalyticalBin.GetXaxis().GetBinLowEdge(1),sumJHEPAnalyticalBin.GetXaxis().GetBinUpEdge(xaxis.GetNbins())
   #print SMAnalyticalBin.GetBinContent(4,4)
   # now loop over events, calculate weights using the coeffitients and  plot histograms
   # events to reweights, in text format (for testing only)
@@ -49,6 +59,8 @@ def main():
   # declare the histograms 
   CalcMhh = np.zeros((1200000))
   CalcCost = np.zeros((1200000))
+  CalcPtH = np.zeros((1200000))
+  CalcPtHH = np.zeros((1200000))
   CalcWeight = np.zeros((1200000))
   ##########################################
   # initialize tables of coefficients by bins
@@ -73,7 +85,7 @@ def main():
           model.ReadLine(line, countline,Px,Py,Pz,En)
           #print countline
           countline+=1
-          mhhcost= [0,0] # to store [mhh , cost] of that event
+          mhhcost= [0,0,0,0] # to store [mhh , cost,ptH , ptHH] of that event
           if countline==2 : # if read 2 lines 
             model.CalculateMhhCost(mhhcost,countline,Px,Py,Pz,En) # ==> adapt to your input 
             bmhh = sumJHEPAnalyticalBin.GetXaxis().FindBin(mhhcost[0])
@@ -82,7 +94,7 @@ def main():
             #weight = model.getScaleFactor(mhhcost,kl, kt,0,model.effSM,model.effSum,model.MHH,model.COSTS,model.A1,model.A3,model.A7,0)  
             #print mhhcost[1],bcost
             #print effSumV0
-            weight = model.getScaleFactor(mhhcost,kl, kt,model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7,effSumV0)  
+            weight = model.getScaleFactor(mhhcost[0],mhhcost[1],kl, kt,c2,cg,c2g, effSumV0,calcSumOfWeights) 
             countline=0
             #############################################
             # fill histograms
@@ -91,10 +103,13 @@ def main():
                #print countevent
                CalcMhh[countevent] = float(mhhcost[0]) 
                CalcCost[countevent] = float(mhhcost[1]) 
+               CalcPtH[countevent] = float(mhhcost[2]) 
+               CalcPtHH[countevent] = float(mhhcost[3]) 
                CalcWeight[countevent] = weight 
                countevent+=1
        f.close()
   print "plotted hostogram reweighted from ",countevent," events, ", float(100*(1200000-countevent)/1200000)," % of the events was lost in empty bins in SM simulation"
+  print "Sum of weights:",CalcWeight.sum()
   ############################################################################################################################
   # Draw test histos
   ###############################################
@@ -114,16 +129,36 @@ def main():
   if kl == 0.0001 and kt == 2.25 and c2 ==0 and cg == 0 and c2g ==0  :
      drawtest =1
      filne = pathBSMtest+"GF_HH_9.lhe.decayed"
+  if kl == 0.0001 and kt == 1.0 and c2 ==0 and cg == 0 and c2g ==0  :
+     drawtest =1
+     filne = pathBSMtest+"GF_HH_4.lhe.decayed"
   if kl == 2.5 and kt == 1.0 and c2 ==0 and cg == 0 and c2g ==0  :
      drawtest =1
      filne = pathBSMtest+"GF_HH_60.lhe.decayed"
+  if kl == -15 and kt == 0.5 and c2 ==0 and cg == 0 and c2g ==0  :
+     drawtest =1
+     filne = pathBSMtest+"GF_HH_40.lhe.decayed"
+  if kl == 5 and kt == 1.5 and c2 ==0 and cg == 0 and c2g ==0  :
+     drawtest =1
+     filne = pathBSMtest+"GF_HH_74.lhe.decayed"
+  if kl == 7.5 and kt == 2.0 and c2 ==0 and cg == 0 and c2g ==0  :
+     drawtest =1
+     filne = pathBSMtest+"GF_HH_88.lhe.decayed"
+  if kl == 0.0001 and kt == 0.0001 and c2 ==-3.0 and cg == 0.0 and c2g ==-1.5  :
+     drawtest =1
+     filne = pathBSMtest+"GF_HH_281.lhe.decayed"
+  if kl == -10 and kt == 0.0 and c2 ==1.0 and cg == 1.0 and c2g ==1.0  :
+     drawtest =1
+     filne = pathBSMtest+"GF_HH_280.lhe.decayed"
   ############################################################################################################################
   CalcMhhTest = np.zeros((nevtest))
   CalcCostTest = np.zeros((nevtest))
+  CalcPtHTest = np.zeros((nevtest))
+  CalcPtHHTest = np.zeros((nevtest))
   if drawtest ==1 :
      print "draw plain histogram to test"
-     model.LoadTestEvents(CalcMhhTest,CalcCostTest,filne)  
-  model.plotting(kl,kt,CalcMhh,CalcCost,CalcWeight,CalcMhhTest,CalcCostTest,drawtest)
+     model.LoadTestEvents(CalcMhhTest,CalcCostTest,CalcPtHTest,CalcPtHHTest,filne)  
+  model.plotting(kl,kt,c2,cg,c2g,CalcMhh,CalcCost,CalcPtH,CalcPtHH,CalcWeight,CalcMhhTest,CalcCostTest,CalcPtHTest,CalcPtHHTest,drawtest)
 ###############################################################################################################################
 if __name__ == "__main__":  
    main()
