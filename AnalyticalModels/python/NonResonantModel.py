@@ -108,7 +108,9 @@ class NonResonantModel:
         # and at the end of the function return it
         print "Stored coefficients by bin"
 
-    def getNormalization(self,kl, kt,c2,cg,c2g,HistoAllEvents):   
+    def getNormalization(self,kl, kt,c2,cg,c2g,HistoAllEventsName,histfiletitle):
+      fileHH=ROOT.TFile(HistoAllEventsName) 
+      HistoAllEvents = fileHH.Get(histfiletitle)   
       sumOfWeights = 0 
       A13tev = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
       sumW=0
@@ -127,15 +129,10 @@ class NonResonantModel:
                self.A13[bincost][binmhh],self.A14[bincost][binmhh],self.A15[bincost][binmhh]]
             #if HistoAllEvents.GetBinContent(binmhh,bincost) > 0 : 
             sumOfWeights+=float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,c2,cg,c2g,A)/self.functionGF(kl,kt,c2,cg,c2g,A13tev))
-            sumW+=self.functionGF(kl,kt,c2,cg,c2g,A13tev)
+            sumW+=self.functionGF(kl,kt,c2,cg,c2g,A13tev) 
             sumW2+=self.functionGF(kl,kt,c2,cg,c2g,A)
             sumSM+=self.effSM[bincost][binmhh]
-            #/ HistoAllEvents.GetBinContent(binmhh,bincost) # / (WX*WY)
-            # sumW+=(WX*WY)
-            # HistoAllEvents.GetBinWidth(binmhh,bincost) #.GetBinContent(binmhh,bincost)
-      #print sumW, sumW2,sumSM, HistW
-      #A = [self.A1[1][5],self.A3[1][5],self.A7[1][5]]
-      #print "in bin 5,1", float(self.effSM[1][5]*self.functionGF(kl,kt,0,0,0,A)/self.functionGF(kl,kt,0,0,0,A13tev))
+      fileHH.Close()
       return float(sumOfWeights)
 
     # distribute the calculated GenMHH and CostS in the bins numbering  (matching the coefficientsByBin_klkt.txt)
@@ -161,11 +158,11 @@ class NonResonantModel:
        binmhh = 0
        bincost = 0
        for ii in range (0,15) : 
-         if mhh > binGenMHH[14-ii] : 
+         if mhh >= binGenMHH[14-ii] : 
             binmhh = 14-ii 
             break
        for ii in range (0,3) : 
-         if cost > binGenCostS[2-ii] : 
+         if cost >= binGenCostS[2-ii] : 
             bincost = 2-ii
             break
        # calculate the weight
@@ -243,6 +240,16 @@ class NonResonantModel:
                 CalcPtHTest[counteventSM] = float(mhhcost[2])
                 CalcPtHHTest[counteventSM] = float(mhhcost[3])
                 counteventSM+=1
+
+    def FindBin(self,mhh,cost,histfilename,histfiletitle) :
+       fileHH=ROOT.TFile(histfilename) #Distros_5p_SM3M_sumBenchJHEP_13TeV.root") # do the histo from V0
+       histfile = fileHH.Get(histfiletitle)
+       bmhh = histfile.GetXaxis().FindBin(mhh)
+       bcost = histfile.GetYaxis().FindBin(cost)
+       effSumV0 = histfile.GetBinContent(bmhh,bcost) 
+       fileHH.Close()
+       #print (mhh,cost,bmhh,bcost,effSumV0)
+       return effSumV0
 
     ###################################################
     # Draw the histograms
