@@ -33,25 +33,25 @@ class NonResonantModel:
         self.A14 = np.zeros((3,13))
         self.A15 = np.zeros((3,13))
         """
-        self.effSM = np.zeros((3,15))
-        self.effSum = np.zeros((3,15))
-        self.MHH = np.zeros((3,15))
-        self.COSTS = np.zeros((3,15))
-        self.A1 = np.zeros((3,15))
-        self.A2 = np.zeros((3,15))
-        self.A3 = np.zeros((3,15))
-        self.A4 = np.zeros((3,15))
-        self.A5 = np.zeros((3,15))
-        self.A6 = np.zeros((3,15))
-        self.A7 = np.zeros((3,15))
-        self.A8 = np.zeros((3,15))
-        self.A9 = np.zeros((3,15))
-        self.A10 = np.zeros((3,15))
-        self.A11 = np.zeros((3,15))
-        self.A12 = np.zeros((3,15))
-        self.A13 = np.zeros((3,15))
-        self.A14 = np.zeros((3,15))
-        self.A15 = np.zeros((3,15))
+        self.effSM = np.zeros((5,15))
+        self.effSum = np.zeros((5,15))
+        self.MHH = np.zeros((5,15))
+        self.COSTS = np.zeros((5,15))
+        self.A1 = np.zeros((5,15))
+        self.A2 = np.zeros((5,15))
+        self.A3 = np.zeros((5,15))
+        self.A4 = np.zeros((5,15))
+        self.A5 = np.zeros((5,15))
+        self.A6 = np.zeros((5,15))
+        self.A7 = np.zeros((5,15))
+        self.A8 = np.zeros((5,15))
+        self.A9 = np.zeros((5,15))
+        self.A10 = np.zeros((5,15))
+        self.A11 = np.zeros((5,15))
+        self.A12 = np.zeros((5,15))
+        self.A13 = np.zeros((5,15))
+        self.A14 = np.zeros((5,15))
+        self.A15 = np.zeros((5,15))
         print "initialize"
 
     # Declare the function
@@ -101,7 +101,7 @@ class NonResonantModel:
           self.A14[countercost][countermhh] = l[18]
           self.A15[countercost][countermhh] = l[19]
           countercost+=1
-          if countercost == 3 :
+          if countercost == 5 :
              countercost=0
              countermhh+=1
         f.close()
@@ -153,7 +153,7 @@ class NonResonantModel:
             break
        """
        binGenMHH = [245.,270.,300.,330.,360.,390., 420.,450.,500.,550.,600.,700.,800.,1000.,1500.,50000]
-       binGenCostS  = [ -1., -0.55,0.55,1.  ]
+       binGenCostS  = [ 0.0,0.4,0.6,0.8, 0.9,1.0 ] # [ -1., -0.55,0.55,1.  ]
        # determine from which bin the event belong
        binmhh = 0
        bincost = 0
@@ -161,9 +161,9 @@ class NonResonantModel:
          if mhh >= binGenMHH[14-ii] : 
             binmhh = 14-ii 
             break
-       for ii in range (0,3) : 
-         if cost >= binGenCostS[2-ii] : 
-            bincost = 2-ii
+       for ii in range (0,5) : 
+         if abs(cost) >= binGenCostS[4-ii] : 
+            bincost = 4-ii
             break
        # calculate the weight
        A13tev = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
@@ -236,7 +236,7 @@ class NonResonantModel:
                 self.CalculateMhhCost(mhhcost,countline,Px,Py,Pz,En) # ==> adapt to your input 
                 countline=0
                 CalcMhhTest[counteventSM] = float(mhhcost[0])
-                CalcCostTest[counteventSM] = float(mhhcost[1])
+                CalcCostTest[counteventSM] = abs(float(mhhcost[1]))
                 CalcPtHTest[counteventSM] = float(mhhcost[2])
                 CalcPtHHTest[counteventSM] = float(mhhcost[3])
                 counteventSM+=1
@@ -245,7 +245,7 @@ class NonResonantModel:
        fileHH=ROOT.TFile(histfilename) #Distros_5p_SM3M_sumBenchJHEP_13TeV.root") # do the histo from V0
        histfile = fileHH.Get(histfiletitle)
        bmhh = histfile.GetXaxis().FindBin(mhh)
-       bcost = histfile.GetYaxis().FindBin(cost)
+       bcost = histfile.GetYaxis().FindBin(abs(cost))
        effSumV0 = histfile.GetBinContent(bmhh,bcost) 
        fileHH.Close()
        #print (mhh,cost,bmhh,bcost,effSumV0)
@@ -271,7 +271,7 @@ class NonResonantModel:
       plt.cla()   # Clear axis
       plt.clf()   # Clear figure
       plt.close() 
-      bin_size = 0.1; min_edge = -1; max_edge = 1
+      bin_size = 0.05; min_edge = 0; max_edge = 1
       N = (max_edge-min_edge)/bin_size; Nplus1 = N + 1
       bin_list = np.linspace(min_edge, max_edge, Nplus1)
       plt.xlim(min_edge, max_edge)

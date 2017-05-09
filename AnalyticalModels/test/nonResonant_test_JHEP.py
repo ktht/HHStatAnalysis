@@ -35,7 +35,8 @@ def main():
   model = NonResonantModel()
   # obtaining BSM/SM coeficients
   #dumb = model.ReadCoefficients("../data/coefficientsByBin_A1A3A7.txt") 
-  dumb = model.ReadCoefficients("../data/coefficientsByBin_extended_3M.txt") 
+  #dumb = model.ReadCoefficients("../data/coefficientsByBin_extended_3M.txt") 
+  dumb = model.ReadCoefficients("../data/coefficientsByBin_extended_3M_costHHSim.txt") 
   # We sum SM + box + the benchmarks from 2-13 
   # read the 2D histo referent to the sum of events
   """
@@ -43,12 +44,12 @@ def main():
   sumJHEPAnalyticalBin = fileHH.Get("H1bin2")
   SMAnalyticalBin = fileHH.Get("H0bin2")
   """
-  fileHH=ROOT.TFile("../../../Analysis/Support/NonResonant/Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root")
+  fileHH=ROOT.TFile("../../../Analysis/Support/NonResonant/Distros_5p_SM3M_sumBenchJHEP_13TeV.root") #Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root")
   #sumJHEPAnalyticalBin = fileHH.Get("H1bin3")
-  histfile = "../../../Analysis/Support/NonResonant/Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root"
-  histtitle = "H1bin3"
+  histfile = "../../../Analysis/Support/NonResonant/Distros_5p_SM3M_sumBenchJHEP_13TeV.root" #Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root"
+  histtitle = "H1bin4"
   sumJHEPAnalyticalBin = fileHH.Get(histtitle)
-  SMAnalyticalBin = fileHH.Get("H0bin3")
+  SMAnalyticalBin = fileHH.Get("H0bin4")
   
   #fileHHname = "../../../Analysis/Support/NonResonant/Distros_5p_SM3M_rebin_sumBenchJHEP_5D_13TeV.root"
   calcSumOfWeights = model.getNormalization(kl, kt,c2,cg,c2g,histfile,histtitle)  # this input is flexible, tatabb may have only the SM
@@ -59,7 +60,7 @@ def main():
   #print SMAnalyticalBin.GetBinContent(4,4)
   # now loop over events, calculate weights using the coeffitients and  plot histograms
   # events to reweights, in text format (for testing only)
-  pathBenchEvents="/afs/cern.ch/work/a/acarvalh/public/toAnamika/GF_HH_BSM/" # events to reweight
+  pathBenchEvents="/afs/cern.ch/work/a/acarvalh/generateHH/asciiHH_tofit/GF_HH_BSM/" # events to reweight
   # declare the histograms 
   CalcMhh = np.zeros((1200000))
   CalcCost = np.zeros((1200000))
@@ -93,7 +94,7 @@ def main():
           if countline==2 : # if read 2 lines 
             model.CalculateMhhCost(mhhcost,countline,Px,Py,Pz,En) # ==> adapt to your input 
             bmhh = sumJHEPAnalyticalBin.GetXaxis().FindBin(mhhcost[0])
-            bcost = sumJHEPAnalyticalBin.GetYaxis().FindBin(mhhcost[1])
+            bcost = sumJHEPAnalyticalBin.GetYaxis().FindBin(abs(mhhcost[1]))
             effSumV0 = sumJHEPAnalyticalBin.GetBinContent(bmhh,bcost)  # quantity of simulated events in that bin (without cuts)
             #weight = model.getScaleFactor(mhhcost,kl, kt,0,model.effSM,model.effSum,model.MHH,model.COSTS,model.A1,model.A3,model.A7,0)  
             #print mhhcost[1],bcost
@@ -124,7 +125,7 @@ def main():
      nevtest = 100000
      drawtest = 1 
   # BSM events
-  pathBSMtest="/afs/cern.ch/work/a/acarvalh/public/toAnamika/GF_HH_toRecursive/" # events of file to superimpose a test
+  pathBSMtest="/afs/cern.ch/work/a/acarvalh/generateHH/asciiHH_tofit/GF_HH_toRecursive/" # events of file to superimpose a test
   # see the translation of coefficients for this last on: If you make this script smarter (to only read files we ask to test) you can implement more
   # https://github.com/acarvalh/generateHH/blob/master/fit_GF_HH_lhe/tableToFitA3andA7.txt
   if kl == -10 and kt == 0.5 and c2 ==0 and cg == 0 and c2g ==0 :
