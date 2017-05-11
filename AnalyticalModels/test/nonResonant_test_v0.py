@@ -24,8 +24,8 @@ c2 = options.c22
 cg = options.cgg
 c2g = options.c2gg
 
-print "events for V0 (the same of the fullsim version of Moriond 2016) \n We sum SM + box + the benchmarks from 2-13"
-if c2 != 0 or cg != 0 or c2g != 0 :  print "The analytical function is not yet implemented"
+#print "events for V0 (the same of the fullsim version of Moriond 2016) \n We sum SM + box + the benchmarks from 2-13"
+#if c2 != 0 or cg != 0 or c2g != 0 :  print "The analytical function is not yet implemented"
 
 ###########################################################
 # read events and apply weight
@@ -35,24 +35,32 @@ def main():
   # declare the 2D ===> should be global variable
   model = NonResonantModel()
   # obtaining BSM/SM coeficients
-  dumb = model.ReadCoefficients("../data/coefficientsByBin_klkt.txt") #,model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7) 
+  #dumb = model.ReadCoefficients("../data/coefficientsByBin_A1A3A7.txt") 
+  dumb = model.ReadCoefficients("../data/coefficientsByBin_extended_3M_costHHSim.txt") 
   counteventSM=0
   sumWeight=0
   # now loop over events, calculate weights using the coeffitients and  plot histograms
   # We sum SM + box + the benchmarks from 2-13 
   # read the 2D histo referent to the sum of events
-  fileHH=ROOT.TFile("../../../Support/NonResonant/Hist2DSum_V0_SM_box.root")
-  sumHAnalyticalBin = fileHH.Get("SumV0_AnalyticalBin")
-  calcSumOfWeights = model.getNormalization(kl, kt,sumHAnalyticalBin)  # this input is flexible, tatabb may have only the SM
+  #fileHH=ROOT.TFile("../../../Analysis/Support/NonResonant/Hist2DSum_V0_SM_box.root")
+  #sumHAnalyticalBin = fileHH.Get("SumV0_AnalyticalBin")
+  histfilename="../../../Analysis/Support/NonResonant/Hist2DSum_V0_SM_box.root"
+  histtitle= "SumV0_AnalyticalBinExtSimCostHH" #"SumV0_AnalyticalBinExt"
+  fileHH=ROOT.TFile(histfilename)
+  sumHAnalyticalBin = fileHH.Get(histtitle)
+  calcSumOfWeights = model.getNormalization(kl, kt,c2,cg,c2g,histfilename,histtitle)  # this input is flexible, tatabb may have only the SM
   # print "sum of weights calculated" , calcSumOfWeights 
   # read the events
-  pathBenchEvents="/afs/cern.ch/work/a/acarvalh/public/toAnamika/GF_HH_BSM/" # events to reweight   
+  pathBenchEvents="/afs/cern.ch/work/a/acarvalh/generateHH/asciiHH_tofit/GF_HH_BSM/" # events to reweight   
   file=ROOT.TFile(pathBenchEvents+"events_SumV0.root")
   tree=file.Get("treeout")
   nev = tree.GetEntries()
   # declare the histograms 
   CalcMhh = np.zeros((nev))
   CalcCost = np.zeros((nev))
+  CalcPtH = np.zeros((nev))
+  CalcPtHH = np.zeros((nev))
+  CalcWeight = np.zeros((nev))
   CalcWeight = np.zeros((nev)) 
   countevent = 0
   #for kll in range(-5,5) : model.getNormalization(kll, kt,sumHBenchBin)
@@ -60,12 +68,12 @@ def main():
       tree.GetEntry(iev)
       mhh = tree.Genmhh
       cost = tree.GenHHCost
-      mhhcost= [mhh,cost] # to store [mhh , cost] of that event
+      mhhcost= [mhh,cost,0,0] # to store [mhh , cost] of that event
       # find the Nevents from the sum of events on that bin
       bmhh = sumHAnalyticalBin.GetXaxis().FindBin(mhh)
-      bcost = sumHAnalyticalBin.GetYaxis().FindBin(cost)
+      bcost = sumHAnalyticalBin.GetYaxis().FindBin(abs(cost))
       effSumV0 = sumHAnalyticalBin.GetBinContent(bmhh,bcost)  # quantity of simulated events in that bin (without cuts)
-      weight = model.getScaleFactor(mhh , cost,kl, kt, effSumV0 , calcSumOfWeights)   # model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7, effSumV0) 
+      weight = model.getScaleFactor(mhh , cost,kl, kt,c2,cg,c2g, effSumV0 , calcSumOfWeights)   # model.effSM,model.MHH,model.COSTS,model.A1,model.A3,model.A7, effSumV0) 
       #############################################
       # fill histograms to test
       #############################################
@@ -73,6 +81,8 @@ def main():
                #print countevent
                CalcMhh[countevent] = float(mhhcost[0]) 
                CalcCost[countevent] = float(mhhcost[1]) 
+               CalcPtH[countevent] = float(mhhcost[2]) 
+               CalcPtHH[countevent] = float(mhhcost[3]) 
                CalcWeight[countevent] = weight 
                countevent+=1
                sumWeight+=weight
@@ -88,7 +98,7 @@ def main():
      nevtest = 100000
      drawtest = 1 
   # BSM events
-  pathBSMtest="/afs/cern.ch/work/a/acarvalh/public/toAnamika/GF_HH_toRecursive/" # events of file to superimpose a test
+  pathBSMtest="/afs/cern.ch/work/a/acarvalh/generateHH/asciiHH_tofit/GF_HH_toRecursive/" # events of file to superimpose a test
   # see the translation of coefficients for this last on: If you make this script smarter (to only read files we ask to test) you can implement more
   # https://github.com/acarvalh/generateHH/blob/master/fit_GF_HH_lhe/tableToFitA3andA7.txt
   if kl == -10 and kt == 0.5 and c2 ==0 and cg == 0 and c2g ==0 :
@@ -103,10 +113,12 @@ def main():
   ############################################################################################################################
   CalcMhhTest = np.zeros((nevtest))
   CalcCostTest = np.zeros((nevtest))
+  CalcPtHTest = np.zeros((nevtest))
+  CalcPtHHTest = np.zeros((nevtest))
   if drawtest ==1 :
      print "draw plain histogram to test"
-     model.LoadTestEvents(CalcMhhTest,CalcCostTest,filne)  
-  model.plotting(kl,kt,CalcMhh,CalcCost,CalcWeight,CalcMhhTest,CalcCostTest,drawtest)  
+     model.LoadTestEvents(CalcMhhTest,CalcCostTest,CalcPtHTest,CalcPtHHTest,filne)  
+  model.plotting(kl,kt,c2,cg,c2g,CalcMhh,CalcCost,CalcPtH,CalcPtHH,CalcWeight,CalcMhhTest,CalcCostTest,CalcPtHTest,CalcPtHHTest,drawtest)
 
 ##########################################
 if __name__ == "__main__":  
