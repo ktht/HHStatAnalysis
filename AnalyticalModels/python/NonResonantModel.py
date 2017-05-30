@@ -7,51 +7,29 @@ import numpy as np
 from array import array
 import matplotlib
 import matplotlib.pyplot as plt
+import math
 
 class NonResonantModel:
     def __init__(self):
         # read coefficients from the input file here
         # to store coefficients use self.
-        """
-        self.effSM = np.zeros((3,13))
-        self.effSum = np.zeros((3,13))
-        self.MHH = np.zeros((3,13))
-        self.COSTS = np.zeros((3,13))
-        self.A1 = np.zeros((3,13))
-        self.A2 = np.zeros((3,13))
-        self.A3 = np.zeros((3,13))
-        self.A4 = np.zeros((3,13))
-        self.A5 = np.zeros((3,13))
-        self.A6 = np.zeros((3,13))
-        self.A7 = np.zeros((3,13))
-        self.A8 = np.zeros((3,13))
-        self.A9 = np.zeros((3,13))
-        self.A10 = np.zeros((3,13))
-        self.A11 = np.zeros((3,13))
-        self.A12 = np.zeros((3,13))
-        self.A13 = np.zeros((3,13))
-        self.A14 = np.zeros((3,13))
-        self.A15 = np.zeros((3,13))
-        """
-        self.effSM = np.zeros((5,15))
-        self.effSum = np.zeros((5,15))
-        self.MHH = np.zeros((5,15))
-        self.COSTS = np.zeros((5,15))
-        self.A1 = np.zeros((5,15))
-        self.A2 = np.zeros((5,15))
-        self.A3 = np.zeros((5,15))
-        self.A4 = np.zeros((5,15))
-        self.A5 = np.zeros((5,15))
-        self.A6 = np.zeros((5,15))
-        self.A7 = np.zeros((5,15))
-        self.A8 = np.zeros((5,15))
-        self.A9 = np.zeros((5,15))
-        self.A10 = np.zeros((5,15))
-        self.A11 = np.zeros((5,15))
-        self.A12 = np.zeros((5,15))
-        self.A13 = np.zeros((5,15))
-        self.A14 = np.zeros((5,15))
-        self.A15 = np.zeros((5,15))
+        self.NCostHHbin=4
+        self.NMHHbin=55
+        self.NCoef=15
+        self.binGenMHH  = [ 250,260,270,280,290,300,310,320,330,340,
+                               350,360,370,380,390,400,410,420,430,440, 
+                               450,460,470,480,490,
+                               500,510,520,530,540,550,600,610,620,630,
+                               640,650,660,670,680,690,700,750,800,850,
+                               900,950,1000,1100,1200,1300,1400,1500.,1750,2000,50000]
+        self.binGenCostS  = [ 0.0,0.4,0.6,0.8, 1.0 ] #
+        self.effSM = np.zeros((self.NCostHHbin,self.NMHHbin))
+        self.effSum = np.zeros((self.NCostHHbin,self.NMHHbin))
+        self.MHH = np.zeros((self.NCostHHbin,self.NMHHbin))
+        self.COSTS = np.zeros((self.NCostHHbin,self.NMHHbin))
+        self.A =  [[[0 for MHHbin in range(self.NMHHbin)] for CostHHbin in range(self.NCostHHbin)] for coef in range(self.NCoef)]
+        self.A13tev = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
+        self.Cnorm =0
         print "initialize"
 
     # Declare the function
@@ -61,7 +39,8 @@ class NonResonantModel:
         # here you should return TH2D histogram with BSM/SM coefficientes to calculate the scale factors for m_hh vs. cos_theta_star
         # loop over events and efficency calculation will be channel-dependent, so corresponding code
         # should go to the other file
-        #filne = "coefficientsByBin_klkt.txt"
+        for coef in range (0,15) : self.A.append((self.NCostHHbin,self.NMHHbin))
+        #for coef in range (0,15) : self.A.append((self.NCostHHbin,self.NMHHbin))
         f = open(inputFileName, 'r+')
         lines = f.readlines() # get all lines as a list (array)
         # Read coefficients by bin
@@ -81,30 +60,17 @@ class NonResonantModel:
               except ValueError: pass
           self.MHH[countercost][countermhh] = l[1] 
           self.COSTS[countercost][countermhh] = l[2] 
-          self.effSM[countercost][countermhh] = l[3]/10000. # in units of 10k events
-          self.effSum[countercost][countermhh] = l[4]/10000. # in units of 10k events # 12 JHEP benchmarks 
+          self.effSM[countercost][countermhh] = l[3] /100000. # in units of 10k events
+          self.effSum[countercost][countermhh] = l[4] /100000. # in units of 10k events # 12 JHEP benchmarks 
           # Just for testing purposes the above contains the number of events by bin from an ensenble of events 
           # calculated from the 12 benchmarks defined in 1507.02245v4 (JHEP version) each one with 100k events
-          self.A1[countercost][countermhh] = l[5]
-          self.A2[countercost][countermhh] = l[6]
-          self.A3[countercost][countermhh] = l[7]
-          self.A4[countercost][countermhh] = l[8]
-          self.A5[countercost][countermhh] = l[9]
-          self.A6[countercost][countermhh] = l[10]
-          self.A7[countercost][countermhh] = l[11]
-          self.A8[countercost][countermhh] = l[12]
-          self.A9[countercost][countermhh] = l[13]
-          self.A10[countercost][countermhh] = l[14]
-          self.A11[countercost][countermhh] = l[15]
-          self.A12[countercost][countermhh] = l[16]
-          self.A13[countercost][countermhh] = l[17]
-          self.A14[countercost][countermhh] = l[18]
-          self.A15[countercost][countermhh] = l[19]
+          for coef in range (0,15) : self.A[coef][countercost][countermhh] = l[5+coef]
           countercost+=1
-          if countercost == 5 :
+          if countercost == self.NCostHHbin : # 5
              countercost=0
              countermhh+=1
         f.close()
+
         # and at the end of the function return it
         print "Stored coefficients by bin"
 
@@ -112,77 +78,102 @@ class NonResonantModel:
       fileHH=ROOT.TFile(HistoAllEventsName) 
       HistoAllEvents = fileHH.Get(histfiletitle)   
       sumOfWeights = 0 
-      A13tev = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
-      sumW=0
-      sumW2=0
-      sumSM=0
-      #HistW= float((1000.-250.)*2)
-      print ("Nbins", HistoAllEvents.GetNbinsX(),HistoAllEvents.GetNbinsY()) 
+      #print ("Nbins", HistoAllEvents.GetNbinsX(),HistoAllEvents.GetNbinsY()) 
+      totCX = self.functionGF(kl,kt,c2,cg,c2g,self.A13tev)
+      if self.functionGF(kl,kt,c2,cg,c2g,self.A13tev) ==0 : print "total Cross Section = 0 , chose another point"
       for binmhh in range (0,HistoAllEvents.GetNbinsX()) :
-         WX = HistoAllEvents.GetXaxis().GetBinWidth(binmhh+1)
          for bincost in range (0,HistoAllEvents.GetNbinsY()) :
-            WY = HistoAllEvents.GetYaxis().GetBinWidth(bincost+1)
-            A = [self.A1[bincost][binmhh],self.A2[bincost][binmhh],self.A3[bincost][binmhh],\
-               self.A4[bincost][binmhh],self.A5[bincost][binmhh],self.A6[bincost][binmhh],\
-               self.A7[bincost][binmhh],self.A8[bincost][binmhh],self.A9[bincost][binmhh],\
-               self.A10[bincost][binmhh],self.A11[bincost][binmhh],self.A12[bincost][binmhh],\
-               self.A13[bincost][binmhh],self.A14[bincost][binmhh],self.A15[bincost][binmhh]]
-            #if HistoAllEvents.GetBinContent(binmhh,bincost) > 0 : 
-            sumOfWeights+=float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,c2,cg,c2g,A)/self.functionGF(kl,kt,c2,cg,c2g,A13tev))
-            sumW+=self.functionGF(kl,kt,c2,cg,c2g,A13tev) 
-            sumW2+=self.functionGF(kl,kt,c2,cg,c2g,A)
-            sumSM+=self.effSM[bincost][binmhh]
+            Abin=[]
+            for coef in range (0,15) : Abin.append(self.A[coef][bincost][binmhh] )
+            sumOfWeights+=float((self.effSM[bincost][binmhh]/30.0)*self.functionGF(kl,kt,c2,cg,c2g,Abin)/totCX)
       fileHH.Close()
+      #self.Cnorm = float(sumOfWeights)
       return float(sumOfWeights)
 
     # distribute the calculated GenMHH and CostS in the bins numbering  (matching the coefficientsByBin_klkt.txt)
-    def getScaleFactor(self,mhh , cost,kl, kt,c2,cg,c2g, effSumV0,norm) : # ,effSM,MHH,COSTS,A1,A3,A7):   
-       """
-       binGenMHH = [250.,270.,300.,330.,360.,390., 420.,450.,500.,550.,600.,700.,800.,1000.]
-       binGenCostS  = [ -1., -0.55,0.55,1.  ]
-       # determine from which bin the event belong
+    def getScaleFactor(self,mhh , cost,kl, kt,c2,cg,c2g, effSumV0,Cnorm) : # ,effSM,MHH,COSTS,A1,A3,A7):   
        binmhh = 0
        bincost = 0
-       for ii in range (0,13) : 
-         if mhh > binGenMHH[12-ii] : 
-            binmhh = 12-ii 
+       if mhh < 247. : print "These variables are problably not genLevel (mhh < 250)"
+       for ii in range (0,self.NMHHbin) : 
+         if mhh >= self.binGenMHH[self.NMHHbin-1-ii] : 
+            binmhh = self.NMHHbin-1-ii 
             break
-       for ii in range (0,3) : 
-         if cost > binGenCostS[2-ii] : 
-            bincost = 2-ii
+       for ii in range (0,self.NCostHHbin) : 
+         var = abs(cost)
+         if var >= self.binGenCostS[self.NCostHHbin-1-ii] : 
+            bincost = self.NCostHHbin-1-ii
             break
-       """
-       binGenMHH = [245.,270.,300.,330.,360.,390., 420.,450.,500.,550.,600.,700.,800.,1000.,1500.,50000]
-       binGenCostS  = [ 0.0,0.4,0.6,0.8, 0.9,1.0 ] # [ -1., -0.55,0.55,1.  ]
-       # determine from which bin the event belong
-       binmhh = 0
-       bincost = 0
-       for ii in range (0,15) : 
-         if mhh >= binGenMHH[14-ii] : 
-            binmhh = 14-ii 
-            break
-       for ii in range (0,5) : 
-         if abs(cost) >= binGenCostS[4-ii] : 
-            bincost = 4-ii
-            break
-       # calculate the weight
-       A13tev = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
-       #if effSum > 0 and A1 > 0: 
        if effSumV0 > 0 :
-          A = [self.A1[bincost][binmhh],self.A2[bincost][binmhh],self.A3[bincost][binmhh],\
-               self.A4[bincost][binmhh],self.A5[bincost][binmhh],self.A6[bincost][binmhh],\
-               self.A7[bincost][binmhh],self.A8[bincost][binmhh],self.A9[bincost][binmhh],\
-               self.A10[bincost][binmhh],self.A11[bincost][binmhh],self.A12[bincost][binmhh],\
-               self.A13[bincost][binmhh],self.A14[bincost][binmhh],self.A15[bincost][binmhh]]
-          effBSM = float(self.effSM[bincost][binmhh]*self.functionGF(kl,kt,c2,cg,c2g,A)/self.functionGF(kl,kt,c2,cg,c2g,A13tev))
-          #if v1 ==0 : CalcWeight = effBSM/float(effSum[bincost][binmhh]) # ==> JHEP sum in denominator
-          CalcWeight = (effBSM/float(effSumV0))/norm # ==> V0 sum in denominator (Moriond 2016)
+          Abin=[]
+          for coef in range (0,15) : Abin.append(self.A[coef][bincost][binmhh] )
+          effBSM = float((self.effSM[bincost][binmhh]/30)*self.functionGF(kl,kt,c2,cg,c2g,Abin)/self.functionGF(kl,kt,c2,cg,c2g,self.A13tev))
+          CalcWeight = ((effBSM)/float(effSumV0))/Cnorm # ==> V0 sum in denominator (Moriond 2016)
           return CalcWeight
-       else : return 0
+       else : return 0   
 
+    def FindBin(self,mhh,cost,histfilename,histfiletitle) :
+       fileHH=ROOT.TFile(histfilename) #Distros_5p_SM3M_sumBenchJHEP_13TeV.root") # do the histo from V0
+       histfile = fileHH.Get(histfiletitle)
+       bmhh = histfile.GetXaxis().FindBin(mhh)
+       #if self.NCostHHbin ==5 or self.NCostHHbin ==4 or self.NCostHHbin ==3 : 
+       #var = abs(cost)
+       var = cost
+       #elif self.NCostHHbin ==3 : var = cost
+       bcost = histfile.GetYaxis().FindBin(var)
+       effSumV0 = histfile.GetBinContent(bmhh,bcost) 
+       fileHH.Close()
+       #print (mhh,cost,bmhh,bcost,effSumV0)
+       return effSumV0
+
+    def getCluster(self,kl, kt,c2,cg,c2g,HistoAllEventsName,histfiletitle):
+      print "Calculating TS"
+      normEv = 1200000000
+      # load benchmarks
+      self.klJHEP=[1.0,  7.5,  1.0,  1.0,  -3.5, 1.0, 2.4, 5.0, 15.0, 1.0, 10.0, 2.4, 15.0]
+      self.ktJHEP=[1.0,  1.0,  1.0,  1.0,  1.5,  1.0, 1.0, 1.0, 1.0,  1.0, 1.5,  1.0, 1.0]
+      self.c2JHEP=[0.0,  -1.0, 0.5, -1.5, -3.0,  0.0, 0.0, 0.0, 0.0,  1.0, -1.0, 0.0, 1.0]
+      self.cgJHEP=[0.0,  0.0, -0.8,  0.0, 0.0,   0.8, 0.2, 0.2, -1.0, -0.6, 0.0, 1.0, 0.0]
+      self.c2gJHEP=[0.0, 0.0, 0.6, -0.8, 0.0, -1.0, -0.2,-0.2,  1.0,  0.6, 0.0, -1.0, 0.0] 
+      TS = np.zeros(13) 
+      Cnorm = self.getNormalization(kl, kt,c2,cg,c2g,HistoAllEventsName,histfiletitle)
+      for bench in range(0,13) :
+        for bincost in range (self.NCostHHbin) :
+           for binmhh in range (0, self.NMHHbin) : #48,3 ) : # (merge 3 mhh bins)
+              Abin=[]
+              for coef in range (0,15) : Abin.append(self.A[coef][bincost][binmhh] )
+              mhh = self.binGenMHH[binmhh]+5.0
+              cost = self.binGenCostS[bincost]+0.1
+              effSumV0 = self.FindBin(mhh,cost,HistoAllEventsName,histfiletitle)
+              #mhhp1 = self.binGenMHH[binmhh+1]+5.0
+              #effSumV0p1 = self.FindBin(mhhp1,cost,HistoAllEventsName,histfiletitle)
+              #mhhp2 = self.binGenMHH[binmhh+2]+5.0
+              #effSumV0p2 = self.FindBin(mhhp2,cost,HistoAllEventsName,histfiletitle)
+              NevScan = normEv*(float((self.effSM[bincost][binmhh]/30)*self.functionGF(kl,kt,c2,cg,c2g,Abin)/self.functionGF(kl,kt,c2,cg,c2g,self.A13tev))/float(effSumV0))/Cnorm #+\
+                        #normEv*(float((self.effSM[bincost][binmhh+1]/30)*self.functionGF(kl,kt,c2,cg,c2g,Abin)/self.functionGF(kl,kt,c2,cg,c2g,self.A13tev))/float(effSumV0p1))/Cnorm+\
+                        #normEv*(float((self.effSM[bincost][binmhh+2]/30)*self.functionGF(kl,kt,c2,cg,c2g,Abin)/self.functionGF(kl,kt,c2,cg,c2g,self.A13tev))/float(effSumV0p2))/Cnorm
+              klB = self.klJHEP[bench]
+              ktB = self.ktJHEP[bench]
+              c2B = self.c2JHEP[bench]
+              cgB = self.cgJHEP[bench]
+              c2gB =self.c2gJHEP[bench]
+              CnormB = self.getNormalization(klB, ktB,c2B,cgB,c2gB,HistoAllEventsName,histfiletitle)
+              Nbench = normEv*(float((self.effSM[bincost][binmhh]/30)*self.functionGF(klB,ktB,c2B,cgB,c2gB,Abin)/self.functionGF(klB,ktB,c2B,cgB,c2gB,self.A13tev))/float(effSumV0))/CnormB #+\
+                       #normEv*(float((self.effSM[bincost][binmhh+1]/30)*self.functionGF(klB,ktB,c2B,cgB,c2gB,Abin)/self.functionGF(klB,ktB,c2B,cgB,c2gB,self.A13tev))/float(effSumV0p1))/CnormB+\
+                       #normEv*(float((self.effSM[bincost][binmhh+2]/30)*self.functionGF(klB,ktB,c2B,cgB,c2gB,Abin)/self.functionGF(klB,ktB,c2B,cgB,c2gB,self.A13tev))/float(effSumV0p2))/CnormB
+              NevScanInt =  int(math.floor(NevScan))
+              NbenchInt =  int(math.floor(Nbench))
+              if NevScanInt <= 0 : NevScanInt =1
+              if NbenchInt <= 0 : NbenchInt =1
+              NSumInt = (NevScanInt+NbenchInt)/2
+              #print mhh, cost , NevScan, NevScanInt , Nbench, NbenchInt , (NevScanInt+NbenchInt)/2
+              TS[bench]+=-2*(math.log(math.factorial(NevScanInt)) + math.log(math.factorial(NbenchInt)) -2*math.log(math.factorial(NSumInt)) )
+              #if NevScanInt > 0 and  NbenchInt > 0 : TS[bench]+=-2*(math.log(math.factorial(NevScanInt)) + math.log(math.factorial(NbenchInt)) -2*math.log(math.factorial(NSumInt)) )
+      print TS
+      minTS = np.argmax(TS)
+      return int(minTS)
 
     ### only to read the text files to test
-
     def ReadLine(self,line, countline,Px,Py,Pz,En) :
             l = []
             tokens = line.split()
@@ -236,80 +227,170 @@ class NonResonantModel:
                 self.CalculateMhhCost(mhhcost,countline,Px,Py,Pz,En) # ==> adapt to your input 
                 countline=0
                 CalcMhhTest[counteventSM] = float(mhhcost[0])
-                CalcCostTest[counteventSM] = abs(float(mhhcost[1]))
+                #if self.NCostHHbin ==5 or self.NCostHHbin ==4 or self.NCostHHbin ==3 : 
+                var = abs(mhhcost[1])
+                #elif self.NCostHHbin ==3 : var = mhhcost[1]
+                CalcCostTest[counteventSM] = float(var)
                 CalcPtHTest[counteventSM] = float(mhhcost[2])
                 CalcPtHHTest[counteventSM] = float(mhhcost[3])
                 counteventSM+=1
 
-    def FindBin(self,mhh,cost,histfilename,histfiletitle) :
-       fileHH=ROOT.TFile(histfilename) #Distros_5p_SM3M_sumBenchJHEP_13TeV.root") # do the histo from V0
-       histfile = fileHH.Get(histfiletitle)
-       bmhh = histfile.GetXaxis().FindBin(mhh)
-       bcost = histfile.GetYaxis().FindBin(abs(cost))
-       effSumV0 = histfile.GetBinContent(bmhh,bcost) 
-       fileHH.Close()
-       #print (mhh,cost,bmhh,bcost,effSumV0)
-       return effSumV0
 
     ###################################################
     # Draw the histograms
     #####################################################
-    def plotting(self,kl,kt,c2,cg,c2g, CalcMhh,CalcCost,CalcPtH,CalcPtHH,CalcWeight,CalcMhhTest,CalcCostTest,CalcPtHTest,CalcPtHHTest,drawtest):
 
+
+    def plotting(self,kl,kt,c2,cg,c2g, CalcMhh,CalcCost,CalcPtH,CalcPtHH,CalcMhhReco,CalcMXReco,CalcWeight,CalcMhhTest,CalcCostTest,CalcPtHTest,CalcPtHHTest,CalcMhhRecoTest,CalcMXRecoTest,drawtest):
+      #
+      # Set the font dictionaries (for plot title and axis titles)
+      matplotlib.rc('xtick', labelsize=16.5) 
+      matplotlib.rc('ytick', labelsize=16.5)
+      title_font = {'size':'16', 'color':'black', 'weight':'normal',
+              'verticalalignment':'bottom'} # Bottom vertical alignment for more space
+      axis_font = {'size':'16'}
+      if drawtest ==0 : 
+         label = str("SM")
+         labeltext =str("$\kappa_{\lambda}$ = "+str(kl)+", $\kappa_{t}$ = "+str(kt)+", $c_{2}$ =  $c_{g}$ =  $c_{2g}$ =" +str(c2g))
+      elif drawtest > 0 : 
+         label =str("BM"+str(drawtest))
+         labeltext=str("BM "+str(drawtest))
+      else : 
+         label = str("kl_"+str(kl)+"_kt_"+str(kt)+"_c2_"+str(c2)+"_cg_"+str(cg)+"_c2g_" +str(c2g))
+         labeltext =str("kl ="+str(kl)+", kt ="+str(kt)+", c2 ="+str(c2)+", cg ="+str(cg)+", c2g =" +str(c2g))
+      #
       print "Plotting test histograms"
-      bin_size = 20; min_edge = 260; max_edge = 1000
+      #f, axes = plt.subplots(1,1)
+      #f.add_subplot(111, aspect='equal')
+      bin_size = 30; min_edge = 170; max_edge = 1500
       N = (max_edge-min_edge)/bin_size; Nplus1 = N + 1
       bin_list = np.linspace(min_edge, max_edge, Nplus1)
+      plt.subplots(figsize=(6, 6))
       plt.xlim(min_edge, max_edge)
-      if drawtest==1 : plt.hist(CalcMhhTest, bin_list , normed=1,  histtype='bar', label='simulated', fill=False, color= 'g', edgecolor='g', lw=5)
-      plt.hist(CalcMhh, bin_list, weights=CalcWeight , normed=1, histtype='bar', label='reweigted', fill=False, color= 'r', edgecolor='r', lw=2)
-      plt.legend(loc='upper right')
-      plt.title(" In  kl =="+str(kl)+", kt =="+str(kt)+", c2 =="+str(c2)+", cg =="+str(cg)+", c2g ==" +str(c2g) )
-      plt.xlabel("Mhh (GeV)")
-      plt.ylabel("a.u.")
-      plt.savefig("Mhh_kl_"+str(kl)+"_kt_"+str(kt)+"_c2_"+str(c2)+"_cg_"+str(cg)+"_c2g_" +str(c2g)+".pdf")
+      plt.hist(CalcMhh, bin_list, weights=CalcWeight*100000., histtype='bar', label='reweigted', fill=False, color= 'g', edgecolor='g', lw=5 ,alpha = 1 ) #
+      #widths = np.diff(bins)
+      #hist *= 100000
+      #plt.bar(bins[:-1], hist, widths)
+      if drawtest>-1 : 
+         #plt.hist(CalcMhhTest, bin_list ,  histtype='bar', label='simulated', fill=False, color= 'r', edgecolor='r', lw=1 ,alpha = 1)
+         n, bins, _ = plt.hist(CalcMhhTest, bins=bin_list,  histtype='bar', label='simulated', fill=False, color= 'r', edgecolor='r', lw=1 ,alpha = 1) #
+         mid = 0.5*(bins[1:] + bins[:-1])
+         #err=np.sqrt(n)
+         plt.errorbar(mid, n, yerr=np.sqrt(n), fmt='none', color= 'r', ecolor= 'r', edgecolor='r')
+      #plt.set_aspect("equal", adjustable='box')
+      #plt.title(labeltext , **title_font)
+      #plt.annotate(labeltext, xy=(0.05, 0.92), xycoords='axes fraction', **title_font)
+      plt.legend(loc='upper right',title=labeltext)
+      plt.subplots_adjust(left=0.15,bottom=0.15)
+      #plt.axes().set_aspect('equal','box')
+      #plt.add_artist( AnchoredText(labeltext, fontsize=15, loc="upper right") ) #text(loc="upper right", labeltext, fontsize=15)
+      #self.fixed_aspect_ratio(1.0)
+      plt.xlabel("$M_{HH}^{Gen}$ (GeV)", **axis_font)
+      plt.ylabel("a.u.", **axis_font)
+      plt.savefig("MhhGen_"+label+".pdf")
+      plt.savefig("MhhGen_"+label+".png")
+      plt.cla()   # Clear axis
+      plt.clf()   # Clear figure
+      plt.close() 
+      ###########################"
+      bin_size = 40; min_edge = 200; max_edge = 1500
+      N = (max_edge-min_edge)/bin_size; Nplus1 = N + 1
+      bin_list = np.linspace(min_edge, max_edge, Nplus1)
+      plt.subplots(figsize=(6, 6))
+      plt.xlim(min_edge, max_edge)
+      plt.hist(CalcMhhReco, bin_list, weights=CalcWeight*100000, histtype='bar', label='reweigted', fill=False, color= 'g', edgecolor='g', lw=5 ,alpha = 1 )
+      if drawtest>-1 : 
+         n, bins, _ = plt.hist(CalcMhhRecoTest, bin_list ,  histtype='bar', label='simulated', fill=False, color= 'r', edgecolor='r', lw=1 ,alpha = 1 )
+         mid = 0.5*(bins[1:] + bins[:-1])
+         err=np.sqrt(n)
+         plt.errorbar(mid, n, yerr=err, fmt='none', color= 'r', ecolor= 'r', edgecolor='r')
+      plt.legend(loc='upper right',title=labeltext,fontsize = 'large')
+      #plt.annotate(labeltext, xy=(0.05, 0.92), xycoords='axes fraction', **title_font)
+      plt.xlabel("$M (\gamma \gamma b \bar{b})$ (GeV)", **axis_font)
+      plt.ylabel("a.u.", **axis_font)
+      plt.savefig("Mhh_"+label+".pdf")
+      plt.savefig("Mhh_"+label+".png")
+      plt.subplots_adjust(left=0.1)
+      plt.cla()   # Clear axis
+      plt.clf()   # Clear figure
+      plt.close() 
+      bin_size = 40; min_edge = 200; max_edge = 1500
+      N = (max_edge-min_edge)/bin_size; Nplus1 = N + 1
+      bin_list = np.linspace(min_edge, max_edge, Nplus1)
+      plt.subplots(figsize=(6, 6))
+      plt.xlim(min_edge, max_edge)
+      plt.hist(CalcMXReco, bin_list, weights=CalcWeight*100000 ,  histtype='bar', label='reweigted', fill=False, color= 'g', edgecolor='g', lw=5 ,alpha = 1 )
+      if drawtest>-1 : 
+         n, bins, _ = plt.hist(CalcMXRecoTest, bin_list ,  histtype='bar', label='simulated', fill=False, color= 'r', edgecolor='r', lw=1 ,alpha = 1 )
+         mid = 0.5*(bins[1:] + bins[:-1])
+         err=np.sqrt(n)
+         plt.errorbar(mid, n, yerr=err, fmt='none', color= 'r', ecolor= 'r', edgecolor='r')
+      plt.legend(loc='upper right',title=labeltext,fontsize = 'large')
+      plt.xlabel("$M_{X}$ (GeV)", **axis_font)
+      plt.ylabel("a.u.", **axis_font)
+      plt.savefig("MX_"+label+".pdf")
+      plt.savefig("MX_"+label+".png")
+      plt.subplots_adjust(left=0.1)
       plt.cla()   # Clear axis
       plt.clf()   # Clear figure
       plt.close() 
       bin_size = 0.05; min_edge = 0; max_edge = 1
       N = (max_edge-min_edge)/bin_size; Nplus1 = N + 1
       bin_list = np.linspace(min_edge, max_edge, Nplus1)
+      plt.subplots(figsize=(6, 6))
       plt.xlim(min_edge, max_edge)
-      if drawtest==1 : plt.hist(CalcCostTest, bin_list , normed=1,  histtype='bar', label='simulated',fill=False, color= 'g', edgecolor='g', lw=5)
-      plt.hist(CalcCost, bin_list, weights=CalcWeight , normed=1, histtype='bar', label='reweigted', fill=False, color= 'r', edgecolor='r', lw=2)
-      plt.title(" In  kl =="+str(kl)+", kt =="+str(kt)+", c2 =="+str(c2)+", cg =="+str(cg)+", c2g ==" +str(c2g) )
-      plt.legend(loc='upper right')
-      plt.xlabel("Cost*")
+      #
+      plt.hist(CalcCost, bin_list, weights=CalcWeight*100000 , histtype='bar', label='reweigted', fill=False, color= 'g', edgecolor='g', lw=5 ,alpha = 1 )
+      if drawtest>-1 : 
+         n, bins, _ = plt.hist(CalcCostTest, bin_list ,  histtype='bar', label='simulated',fill=False, color= 'r', edgecolor='r', lw=1 ,alpha = 1 )
+         mid = 0.5*(bins[1:] + bins[:-1])
+         err=np.sqrt(n)
+         plt.errorbar(mid, n, yerr=err, fmt='none', color= 'r', ecolor= 'r', edgecolor='r')
+      plt.legend(loc='upper right',title=labeltext,fontsize = 'large')
+      plt.xlabel("$cost\theta^*HH^{Gen}$")
       plt.ylabel("a.u.")
-      plt.savefig("CostS_kl_"+str(kl)+"_kt_"+str(kt)+"_c2_"+str(c2)+"_cg_"+str(cg)+"_c2g_" +str(c2g)+".pdf")
+      plt.ylim(0, 350)
+      plt.subplots_adjust(left=0.1)
+      plt.savefig("CostS_"+label+".pdf")
+      plt.savefig("CostS_"+label+".png")
       plt.cla()   # Clear axis
       plt.clf()   # Clear figure
       plt.close() 
-      bin_size = 10; min_edge = 0; max_edge = 400
+      bin_size = 20; min_edge = 0; max_edge = 700
       N = (max_edge-min_edge)/bin_size; Nplus1 = N + 1
       bin_list = np.linspace(min_edge, max_edge, Nplus1)
+      plt.subplots(figsize=(6, 6))
       plt.xlim(min_edge, max_edge)
-      if drawtest==1 : plt.hist(CalcPtHTest, bin_list , normed=1,  histtype='bar', label='simulated', fill=False, color= 'g', edgecolor='g', lw=5)
-      plt.hist(CalcPtH, bin_list, weights=CalcWeight , normed=1, histtype='bar', label='reweigted', fill=False, color= 'r', edgecolor='r', lw=2)
-      plt.legend(loc='upper right')
-      plt.title(" In  kl =="+str(kl)+", kt =="+str(kt)+", c2 =="+str(c2)+", cg =="+str(cg)+", c2g ==" +str(c2g) )
-      plt.xlabel("Pt h (GeV)")
-      plt.ylabel("a.u.")
-      plt.savefig("PtH_kl_"+str(kl)+"_kt_"+str(kt)+"_c2_"+str(c2)+"_cg_"+str(cg)+"_c2g_" +str(c2g)+".pdf")
+      plt.hist(CalcPtH, bin_list, weights=CalcWeight*100000 ,histtype='bar', label='reweigted', fill=False, color= 'g', edgecolor='g', lw=5 ,alpha = 1 )
+      if drawtest>-1 : 
+         n, bins, _ = plt.hist(CalcPtHTest, bin_list ,   histtype='bar', label='simulated', fill=False, color= 'r', edgecolor='r', lw=1 ,alpha = 1 )
+         mid = 0.5*(bins[1:] + bins[:-1])
+         err=np.sqrt(n)
+         plt.errorbar(mid, n, yerr=err, fmt='none', color= 'r', ecolor= 'r', edgecolor='r')
+      plt.legend(loc='upper right',title=labeltext,fontsize = 'large')
+      plt.xlabel("$p_{T} (\gamma \gamma)$ (GeV)", **axis_font)
+      plt.ylabel("a.u.", **axis_font)
+      plt.savefig("PtH_"+label+".pdf")
+      plt.savefig("PtH_"+label+".png")
       plt.cla()   # Clear axis
       plt.clf()   # Clear figure
       plt.close() 
-      bin_size = 10; min_edge = 0; max_edge = 100
+      bin_size = 20; min_edge = 0; max_edge = 300
       N = (max_edge-min_edge)/bin_size; Nplus1 = N + 1
       bin_list = np.linspace(min_edge, max_edge, Nplus1)
+      plt.subplots(figsize=(6, 6))
       plt.xlim(min_edge, max_edge)
-      if drawtest==1 : plt.hist(CalcPtHHTest, bin_list , normed=1,  histtype='bar', label='simulated', fill=False,  color= 'g', edgecolor='g', lw=5)
-      plt.hist(CalcPtHH, bin_list, weights=CalcWeight , normed=1, histtype='bar', label='reweigted', fill=False, color= 'r', edgecolor='r', lw=2)
-      plt.legend(loc='upper right')
-      plt.title(" In  kl =="+str(kl)+", kt =="+str(kt)+", c2 =="+str(c2)+", cg =="+str(cg)+", c2g ==" +str(c2g) )
-      plt.xlabel("Pt hh (GeV)")
-      plt.ylabel("a.u.")
-      plt.savefig("PtHH_kl_"+str(kl)+"_kt_"+str(kt)+"_c2_"+str(c2)+"_cg_"+str(cg)+"_c2g_" +str(c2g)+".pdf")
+      plt.hist(CalcPtHH, bin_list, weights=CalcWeight*100000 , histtype='bar', label='reweigted', fill=False, color= 'g', edgecolor='g', lw=5 ,alpha = 1 )
+      if drawtest>-1 : 
+         n, bins, _ = plt.hist(CalcPtHHTest, bin_list ,  histtype='bar', label='simulated', fill=False,  color= 'r', edgecolor='r', lw=1 ,alpha = 1 )
+         mid = 0.5*(bins[1:] + bins[:-1])
+         err=np.sqrt(n)
+         plt.errorbar(mid, n, yerr=err, fmt='none', color= 'r', ecolor= 'r', edgecolor='r')
+      plt.legend(loc='upper right',title=labeltext,fontsize = 'large')
+      plt.xlabel("$p_{T} (\gamma \gamma b \bar{b}) $(GeV)", **axis_font)
+      plt.ylabel("a.u.", **axis_font)
+      plt.savefig("PtHH_"+label+".pdf")
+      plt.savefig("PtHH_"+label+".png")
       plt.cla()   # Clear axis
       plt.clf()   # Clear figure
       plt.close() 
