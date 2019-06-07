@@ -3,6 +3,7 @@
 # compiling
 
 import ROOT
+ROOT.gROOT.SetBatch(True)
 import numpy as np
 from array import array
 import matplotlib
