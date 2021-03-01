@@ -21,8 +21,8 @@ mymodel = NonResonantModelNLO.NonResonantModelNLO()
 mymodel.ReadCoefficients("../data/pm_pw_NLO_Ais_13TeV_V2.txt")
 
 # event example
-event_mHH=514.
-event_costhetaHH=0.3
+event_mHH=514
+event_costhetaHH=0.5
 event_weight=0.1234
 
 # assume that I want to reweight a given input sample for benchmark XYZ
@@ -30,8 +30,6 @@ event_weight=0.1234
 inputevfile = ROOT.TFile("inputevdistribution.root")
 histo_Nev = inputevfile.Get("inputev_benchmarkXYZ.root") # this is a TH2 histo
 Nevtot = Nev.Integral() 
-
-
 
 for iBM in range(0,12):
     BMcouplings = mymodel.getBenchmark(iBM)
@@ -41,7 +39,9 @@ for iBM in range(0,12):
     print "diffXS(event_mHH)", mymodel.getDifferentialXSmHH(event_mHH, kl, kt, c2, cg, c2g)
     Nev = histo_Nev.GetBinContent( histo_Nev.FindBin(event_mHH, event_costhetaHH) )
     XS = mymodel.getDifferentialXS2D(event_mHH, event_costhetaHH, kl, kt, c2, cg, c2g)
+    # before using the differential XS, scale it by the bin area to properly compare it with histo_Nev content 
+    Noutputev = XS * mymodel.getmHHbinwidth(event_mHH) * mymodel.getcosthetabinwidth(event_costhetaHH) 
     XStot = mymodel.getTotalXS(kl, kt, c2, cg, c2g)
-    reweight = event_weight * XS/Nev * Nevtot/XStot
+    reweight = event_weight * Noutputev/Nev * Nevtot/XStot
     print reweight
     print 

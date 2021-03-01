@@ -61,9 +61,9 @@ class NonResonantModelNLO:
     def FindBin(self,mhh,cost):
         mhhbin=-1
         if mhh < 250.:
-            print "[ERROR]: a value mhh<250 was provided"
+            raise Exception("[ERROR]: a value mhh<250 was provided")
         elif mhh >= self.binGenMHH[self.NMHHbin]:
-            mhhbin=self.NMHHbin
+            mhhbin=self.NMHHbin-1
         else:
             for ibin in range (0,self.NMHHbin):
                 if mhh>=self.binGenMHH[ibin] and mhh<self.binGenMHH[ibin+1]:
@@ -72,7 +72,7 @@ class NonResonantModelNLO:
 
         costbin=-1
         if cost<0. or cost>1.:
-            print "[ERROR]: a value costheta<0. or costheta>1. was provided"
+            raise Exception("costheta<0 or costheta>1 was provided")
         else:
             for ibin in range (0,self.NCostHHbin):
                 if cost>=self.binGenCostS[ibin] and cost<self.binGenCostS[ibin+1]:
@@ -86,17 +86,12 @@ class NonResonantModelNLO:
         lines = f.readlines() # get all lines as a list (array)
         # Read coefficients by bin
         for line in  lines:
-            #print "reading line", line
             l = []
             tokens = line.split(",")
-            #print "tokens are", tokens
             if tokens[0]=='""': #nominal coefficients have no label
-                #print "this is nominal" 
                 MHHmin=float(tokens[1])
                 costhetamin=float(tokens[3])
-                #print "MHHmin, costhetamin = ", MHHmin, costhetamin
                 MHHbin, costhetabin = self.FindBin(MHHmin,costhetamin)
-                #print "the bin is ",MHHbin, costhetabin
                 for coef in range (0,self.NCoef):
                     self.A[coef][costhetabin][MHHbin] = float(tokens[5+coef])
         f.close()
@@ -105,15 +100,23 @@ class NonResonantModelNLO:
     def getTotalXS(self, kl, kt, c2, cg, c2g):
         return self.functionGF(kl,kt,c2,cg,c2g,self.A13tev)
 
+    def getmHHbinwidth(self,mHHvalue):
+        binmhh, bincost = self.FindBin(mHHvalue,0.)
+        dmhh = self.binGenMHH[binmhh+1] - self.binGenMHH[binmhh]
+        return dmhh
+
+    def getcosthetabinwidth(self,costhetavalue):
+        binmhh, bincostheta = self.FindBin(500,costhetavalue)
+        dcostheta = self.binGenCostS[bincostheta+1] - self.binGenCostS[bincostheta]
+        return dcostheta
+
     def getDifferentialXS2D(self, mhh, cost, kl, kt, c2, cg, c2g):
         #assume XS~0 for mHH > 5000 GeV
-        if mhh > self.binGenMHH[ self.NMHHbin ]:
+        if mhh >= self.binGenMHH[ self.NMHHbin ]:
             return 0.
         binmhh, bincost = self.FindBin(mhh,cost)
-        dmhh = self.binGenMHH[binmhh+1] - self.binGenMHH[binmhh]
-        dcost = self.binGenCostS[bincost+1] - self.binGenCostS[bincost]
         Acoeff = [ self.A[coef][bincost][binmhh] for coef in range(0,self.NCoef) ] 
-        return self.functionGF(kl,kt,c2,cg,c2g,Acoeff)/1000. * dcost
+        return self.functionGF(kl,kt,c2,cg,c2g,Acoeff)/1000.
 
     def getDifferentialXSmHH(self, mhh, kl, kt, c2, cg, c2g):
         # Integrate the 2D differental XS over costheta
@@ -123,7 +126,7 @@ class NonResonantModelNLO:
             costhetamax = self.binGenCostS[bincost+1]
             dcostheta = costhetamax - costhetamin
             costheta = 0.5*(costhetamax+costhetamin)
-            dXS += self.getDifferentialXS2D(mhh,costheta,kl,kt,c2,cg,c2g)
+            dXS += self.getDifferentialXS2D(mhh,costheta,kl,kt,c2,cg,c2g) * dcostheta
         return dXS
 
     def getBenchmark(self, BM):
