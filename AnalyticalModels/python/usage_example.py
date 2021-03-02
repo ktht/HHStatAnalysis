@@ -29,7 +29,7 @@ event_weight=0.1234
 # to all the NLO benchmarks using the approach 2 as described above
 inputevfile = ROOT.TFile("inputevdistribution.root")
 histo_Nev = inputevfile.Get("inputev_benchmarkXYZ") # this is a TH2 histo
-Nevtot = Nev.Integral() 
+Nevtot = histo_Nev.Integral() 
 
 for iBM in range(0,12):
     BMcouplings = mymodel.getBenchmark(iBM)
