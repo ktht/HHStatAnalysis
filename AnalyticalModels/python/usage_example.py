@@ -28,7 +28,7 @@ event_weight=0.1234
 # assume that I want to reweight a given input sample for benchmark XYZ
 # to all the NLO benchmarks using the approach 2 as described above
 inputevfile = ROOT.TFile("inputevdistribution.root")
-histo_Nev = inputevfile.Get("inputev_benchmarkXYZ.root") # this is a TH2 histo
+histo_Nev = inputevfile.Get("inputev_benchmarkXYZ") # this is a TH2 histo
 Nevtot = Nev.Integral() 
 
 for iBM in range(0,12):
