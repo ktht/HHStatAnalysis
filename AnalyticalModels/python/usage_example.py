@@ -10,8 +10,11 @@
 #
 # Then you can derive the reweight as:
 #    reweight = [XS(mHH,costh|outputBM)/Nev(mHH,costh)] * [Nevtot/XStot(outputBM)]
-#            
- 
+#             
+# NOTE: if you merge, e.g. with hadd, N reweighted samples each normalized to 1,
+# then you need to scale by a factor N to preserve the overall normalization
+#    
+
 import  NonResonantModelNLO
 import ROOT 
 mymodel = NonResonantModelNLO.NonResonantModelNLO()
@@ -24,6 +27,7 @@ event_weight=0.1234
 
 # assume that I want to reweight a given input sample for benchmark XYZ
 # to all the NLO benchmarks using the approach 2 as described above
+
 inputevfile = ROOT.TFile("inputevdistribution.root")
 histo_Nev = inputevfile.Get("inputev_benchmarkXYZ") # this is a TH2 histo
 Nevtot = histo_Nev.Integral() 
