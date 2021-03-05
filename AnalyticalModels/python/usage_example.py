@@ -1,19 +1,16 @@
-# this script provides an example of how to reweight a certain input 
-# sample to a given output benchmark. Two options are viable:
-#
-# 1. If you know the coefficients used to generate the input sample, and,
-#    in case it is a LO Madgraph sample, you have the LO reweightin tool, the 
-#    reweight can be derived as:
-#    reweight = [XS(mHH,costh|outputBM)/XS(mHH,costh|inputBM)] * [XStot(inputBM)/XStot(outputBM)]         
-#
-# 2. If you know the 2D distribution in (mHH,costh) of your input sample Nev(mHH,costh), 
-#    you can derive the reweight as:
-#    reweight = [XS(mHH,costh|outputBM)/Nev(mHH,costh)] * [Nevtot/XStot(outputBM)]
-#    NOTE: the binning for Nev(mHH,costh) has to be the same defined in NonResonantModelNLO        
-#
-# The tools offer also the possibility to reweight only in mHH, 
-# neglecting the dependence on costhetaHH.
+# Author Fabio Monti, IHEP Beijing
+# 5 March 2021
 # 
+# This script provides an example of how to reweight a certain input 
+# sample to a given output benchmark. 
+#
+# Before running the reweight you need the 2D distribution in (mHH,costh) 
+# of your input sample ("histo_Nev" in this example).
+# NOTE: the binning for Nev(mHH,costh) has to be the same defined in NonResonantModelNLO!
+#
+# Then you can derive the reweight as:
+#    reweight = [XS(mHH,costh|outputBM)/Nev(mHH,costh)] * [Nevtot/XStot(outputBM)]
+#            
  
 import  NonResonantModelNLO
 import ROOT 

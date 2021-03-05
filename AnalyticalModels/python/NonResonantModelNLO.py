@@ -1,6 +1,11 @@
-# Provides scale factors for event reweighting based on an analytical model.
-# This file is part of https://github.com/cms-hh/HHStatAnalysis.
-# compiling
+# 
+# This class provides a tool to access the differential XS(mHH, costhetaHH) 
+# and total XS of the HH @ NLO through an analytical formula.
+# The coefficients were derived by P. Mandrik and originally stored in the 
+# repository https://github.com/pmandrik/VSEVA/tree/master/HHWWgg/reweight  
+#
+# For an example on how to use the reweight see the script usage_example.py
+# in the same folder of this file
 
 import ROOT
 ROOT.gROOT.SetBatch(True)
