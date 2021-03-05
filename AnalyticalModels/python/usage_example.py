@@ -4,9 +4,11 @@
 # This script provides an example of how to reweight a certain input 
 # sample to a given output benchmark. 
 #
-# Before running the reweight you need the 2D distribution in (mHH,costh) 
-# of your input sample ("histo_Nev" in this example).
-# NOTE: the binning for Nev(mHH,costh) has to be the same defined in NonResonantModelNLO!
+# Before running the reweight you need the 2D distribution in (mHH-gen,costh-gen) 
+# of your full input sample WITHOUT ANY SELECTION. In this example this is called 
+# "histo_Nev". 
+# NOTE: the binning for histo_Nev(mHH,costh) has to be the same defined in 
+# NonResonantModelNLO!!!
 #
 # Then you can derive the reweight as:
 #    reweight = [XS(mHH,costh|outputBM)/Nev(mHH,costh)] * [Nevtot/XStot(outputBM)]
