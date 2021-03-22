@@ -134,7 +134,7 @@ class NonResonantModelNLO:
             dXS += self.getDifferentialXS2D(mhh,costheta,kl,kt,c2,cg,c2g) * dcostheta
         return dXS
 
-    def getBenchmark(self, BM):
+    def getBenchmark(self, BM): #benchmark points from JHEP04(2016)126
         # load benchmarks
         BMcouplings={}
         BMcouplings["kl"]=[1.0,  7.5,  1.0,  1.0,  -3.5, 1.0, 2.4, 5.0, 15.0, 1.0, 10.0, 2.4, 15.0]
@@ -144,6 +144,23 @@ class NonResonantModelNLO:
         BMcouplings["c2g"]=[0.0, 0.0, 0.6, -0.8, 0.0, -1.0, -0.2,-0.2,  1.0,  0.6, 0.0, -1.0, 0.0] 
         return [ BMcouplings[param][BM] for param in ["kl", "kt", "c2", "cg", "c2g"] ]
 
+    def getBenchmark8a(self): # A new benchmark is defined in JHEP09(2018)057 to re-produce the expected features of benchmark 8 
+        return [1.0, 1.0, 0.5, 0.8/3, 0.0]
+
+    def getBenchmark2020(self, BM): #new benchmarks from JHEP03(2020)091
+        BMcouplings={}
+        BMcouplings["kl"]=[   3.94,   6.84,    2.21,   2.79,   3.95,  5.68, -0.10]
+        BMcouplings["kt"]=[   0.94,   0.61,    1.05,   0.61,   1.17,  0.83,  0.94]
+        BMcouplings["c2"]=[ -1./3.,  1./3.,  -1./3.,  1./3., -1./3., 1./3.,  1.]
+        BMcouplings["cg"]=[    0.5,    0.0,     0.5,   -0.5,  1./6.,  -0.5,  1./6.]
+        BMcouplings["c2g"]=[ 1./3., -1./3.,    0.5 ,  1./6.,  -0.5 , 1./3., -1./6.]
+        #a redefinition of the cg and c2g parameters was done in the paper
+        for ivalue in range(len(BMcouplings["cg"])):
+            BMcouplings["cg"][ivalue] *= 1.5
+        for ivalue in range(len(BMcouplings["c2g"])):
+            BMcouplings["c2g"][ivalue] *= (-3.)
+
+        return [ BMcouplings[param][BM] for param in ["kl", "kt", "c2", "cg", "c2g"] ]
 
     def CalculateMhhCost(self,mhhcost,countline,Px,Py,Pz,En) :
         # calculate reweigthing 
