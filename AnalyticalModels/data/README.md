@@ -1,3 +1,5 @@
+# LO reweight      
+
 The coefficients calculated bin by bin are in "coefficientsByBin_klkt.txt"
 
 The bins are defined in the gen-level variables as:
@@ -15,4 +17,7 @@ The bins are defined in the gen-level variables as:
    The numbering of the coefficients follow https://arxiv.org/abs/1608.06578
 
 
+# NLO reweight      
 
+The coefficients are in "pm_pw_NLO_Ais_13TeV_V2.txt", taken from [pmandrik repository](https://github.com/pmandrik/VSEVA/tree/master/HHWWgg/reweight).        
+The model to be used is defined in NonResonantModelNLO.py, while an usage example is provided in usage_example.py      
